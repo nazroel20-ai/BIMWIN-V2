@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer onload="gis()"></script>
+<script src="https://accounts.google.com/gsi/client" async defer onload="window.gis&&gis()"></script>
 <script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','sans-serif']}}}}</script>
 <style type="text/tailwindcss">
 .card{@apply bg-white rounded-2xl shadow-sm border border-slate-200 p-5}
@@ -144,11 +144,15 @@ function role(r){
   $('P').classList.toggle('hidden',r!='P');$('A').classList.toggle('hidden',r!='A');
   $('rP').className='tab '+(r=='P'?'bg-white shadow-sm':'text-slate-500');$('rA').className='tab '+(r=='A'?'bg-white shadow-sm text-indigo-700':'text-slate-500');
   if(r=='A'){$('gate').classList.toggle('hidden',!!S.tok);$('adm').classList.toggle('hidden',!S.tok);
-    if(!S.tok&&window.google&&!CLIENT_ID.startsWith('GANTI'))google.accounts.id.renderButton($('gBtn'),{theme:'outline',size:'large'})}
+    if(!S.tok){gis();const g=$('gBtn');
+      if(CLIENT_ID.startsWith('GANTI'))g.innerHTML='<p class="text-xs text-rose-600">CLIENT_ID belum diisi di index.html</p>';
+      else if(gisReady){g.innerHTML='';google.accounts.id.renderButton(g,{theme:'outline',size:'large'})}
+      else{g.innerHTML='<p class="text-xs text-slate-500">Memuat Google Sign-In... klik Admin lagi dalam beberapa detik. Jika tetap gagal, matikan ad-blocker.</p>';setTimeout(()=>{if(!S.tok&&!$('A').classList.contains('hidden'))role('A')},2500)}}}
 }
+let gisReady=0;
 function gis(){
-  if(CLIENT_ID.startsWith('GANTI'))return;
-  google.accounts.id.initialize({client_id:CLIENT_ID,auto_select:true,callback:onCred});
+  if(gisReady||!window.google||!google.accounts||CLIENT_ID.startsWith('GANTI'))return;
+  google.accounts.id.initialize({client_id:CLIENT_ID,auto_select:true,callback:onCred});gisReady=1;
   if(localStorage.getItem('bw_adm'))google.accounts.id.prompt(); // hanya untuk browser yang pernah login admin
 }
 async function onCred(r){
@@ -157,7 +161,7 @@ async function onCred(r){
 }
 
 /* ---------- init ---------- */
-window.onload=()=>{role('P');setAuth('l');buildReg();run(async()=>{S.info=await api('info');$('kua').textContent=S.info.s.namaKua;fillBim()})};
+window.onload=()=>{gis();role('P');setAuth('l');buildReg();run(async()=>{S.info=await api('info');$('kua').textContent=S.info.s.namaKua;fillBim()})};
 
 /* ---------- peserta: auth ---------- */
 function setAuth(m){const l=m=='l';$('fL').classList.toggle('hidden',!l);$('fR').classList.toggle('hidden',l);
