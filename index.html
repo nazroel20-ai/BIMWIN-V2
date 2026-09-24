@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Bimbingan Perkawinan (Bimwin) - KUA</title>
+    <title>Aplikasi Bimbingan Perkawinan (SIM-BIMWIN) - KUA</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Font Inter -->
@@ -55,15 +55,9 @@
             color: #334155;
             min-height: 100vh;
         }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-        }
         .ratio-3-4 {
             aspect-ratio: 3 / 4;
         }
-        /* Custom scrollbars */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -78,21 +72,15 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94A3B8;
         }
-        .gradient-card-1 {
-            background: linear-gradient(135deg, #6366F1 0%, #a855f7 100%);
-        }
-        .gradient-card-2 {
-            background: linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%);
-        }
-        .gradient-card-3 {
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-        }
-        .gradient-card-4 {
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-        }
     </style>
 </head>
 <body class="antialiased selection:bg-brand-indigo selection:text-white">
+
+    <!-- Sync Loading Indicator -->
+    <div id="globalSyncLoader" class="fixed top-0 left-0 right-0 z-50 bg-emerald-600 text-white text-[11px] font-bold py-1 px-4 text-center hidden flex items-center justify-center space-x-2 shadow-md">
+        <i class="fa-solid fa-spinner animate-spin"></i>
+        <span>Menyinkronkan data dengan Google Apps Script Database...</span>
+    </div>
 
     <!-- Top Bar -->
     <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-3">
@@ -107,20 +95,13 @@
                 </div>
             </div>
 
-            <!-- Global Action Controls -->
+            <!-- Global Action Controls (Participant vs Protected Admin) -->
             <div class="flex items-center space-x-2">
-                <!-- Gas Status Indicator -->
-                <button onclick="toggleGasModal()" class="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200 hover:bg-emerald-100 transition">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                    <span>AppsScript Online</span>
-                </button>
-
-                <!-- Current Role Tag & Switcher -->
                 <div class="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold">
                     <button id="btnRolePeserta" onclick="switchRole('peserta')" class="px-3 py-1.5 rounded-lg transition-all shadow-sm bg-white text-slate-800">
                         <i class="fa-solid fa-user-heart mr-1 text-rose-500"></i> Peserta
                     </button>
-                    <button id="btnRoleAdmin" onclick="switchRole('admin')" class="px-3 py-1.5 rounded-lg transition-all text-slate-500 hover:text-slate-800">
+                    <button id="btnRoleAdmin" onclick="requestAdminAccess()" class="px-3 py-1.5 rounded-lg transition-all text-slate-500 hover:text-slate-800">
                         <i class="fa-solid fa-user-shield mr-1 text-indigo-600"></i> Admin KUA
                     </button>
                 </div>
@@ -141,7 +122,6 @@
 
             <!-- 1. PESERTA AUTH (LOGIN / REGISTER) CONTAINER -->
             <div id="pesertaAuthBox" class="max-w-md mx-auto py-8">
-                <!-- Tab Switching Login vs Register -->
                 <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
                     <div class="text-center mb-6">
                         <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl font-bold shadow-inner">
@@ -256,8 +236,8 @@
                                 <i class="fa-solid fa-user-check"></i>
                                 <span id="loggedAsRole">Catin Pria Login</span>
                             </div>
-                            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight" id="welcomeCoupleName">Siti & Ahmad</h2>
-                            <p class="text-emerald-100 text-xs sm:text-sm mt-1" id="welcomeScheduleText">Jadwal Bimwin Offline: 20 Oktober 2026</p>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight" id="welcomeCoupleName">-</h2>
+                            <p class="text-emerald-100 text-xs sm:text-sm mt-1" id="welcomeScheduleText">Jadwal Bimwin Offline: -</p>
                         </div>
                         <div class="flex items-center space-x-2">
                             <button onclick="openEditProfileModal()" class="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-xs font-semibold rounded-xl transition border border-white/20 flex items-center">
@@ -270,7 +250,7 @@
                     </div>
                 </div>
 
-                <!-- Reminder Alert Box (Hidden when offline attendance confirmed) -->
+                <!-- Reminder Alert Box -->
                 <div id="reminderAlertBox" class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-2xl shadow-sm flex items-start space-x-3">
                     <div class="text-amber-500 text-xl pt-0.5">
                         <i class="fa-solid fa-bell animate-bounce"></i>
@@ -288,7 +268,6 @@
 
                     <!-- Left Column: Profile Card & Actions -->
                     <div class="space-y-6">
-                        <!-- Profile Active Card -->
                         <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
                             <div class="flex items-center justify-between border-b pb-4 mb-4">
                                 <h3 class="font-bold text-slate-800 text-sm flex items-center">
@@ -335,7 +314,7 @@
                             <div>
                                 <span class="text-xs text-slate-400 block font-semibold">Status Kehadiran Luring</span>
                                 <h4 id="statusOfflineText" class="font-bold text-slate-700 text-sm">Belum Bimbingan Offline</h4>
-                                <p class="text-[11px] text-slate-400 mt-0.5" id="statusOfflineSub font-normal">Dikonfirmasi oleh Admin KUA setelah tatap muka.</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5 font-normal">Dikonfirmasi oleh Admin KUA setelah tatap muka.</p>
                             </div>
                         </div>
                     </div>
@@ -356,7 +335,7 @@
                                     </span>
                                 </div>
 
-                                <!-- CONDITION 1: LOCKED (BEFORE OFFLINE ATTENDANCE) -->
+                                <!-- CONDITION 1: LOCKED -->
                                 <div id="postTestLockedBox" class="py-12 px-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center">
                                     <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3 text-2xl">
                                         <i class="fa-solid fa-lock"></i>
@@ -367,11 +346,9 @@
                                     </p>
                                 </div>
 
-                                <!-- CONDITION 2: UNLOCKED (AFTER OFFLINE ATTENDANCE) -->
+                                <!-- CONDITION 2: UNLOCKED -->
                                 <div id="postTestUnlockedBox" class="hidden space-y-4">
-                                    <!-- Couple Score Cards -->
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <!-- Catin Pria Test Info -->
                                         <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
                                             <div class="flex items-center justify-between mb-2">
                                                 <span class="text-xs font-bold text-blue-700 flex items-center"><i class="fa-solid fa-mars mr-1"></i> Catin Pria</span>
@@ -383,7 +360,6 @@
                                             </div>
                                         </div>
 
-                                        <!-- Catin Wanita Test Info -->
                                         <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
                                             <div class="flex items-center justify-between mb-2">
                                                 <span class="text-xs font-bold text-rose-700 flex items-center"><i class="fa-solid fa-venus mr-1"></i> Catin Wanita</span>
@@ -396,7 +372,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Action Info Text -->
                                     <div class="p-3 bg-blue-50 rounded-xl border border-blue-100 text-xs text-blue-800 flex items-center space-x-2">
                                         <i class="fa-solid fa-circle-info text-blue-600 text-base shrink-0"></i>
                                         <span>Kedua calon pengantin harus mengerjakan post-test dan lulus KKM agar tombol Sertifikat dapat diunduh.</span>
@@ -404,7 +379,6 @@
                                 </div>
                             </div>
 
-                            <!-- Buttons Bar -->
                             <div id="postTestButtonsBar" class="hidden pt-6 mt-6 border-t flex flex-wrap gap-3">
                                 <button id="btnStartPostTest" onclick="startPostTest()" class="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xs rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center">
                                     <i class="fa-solid fa-pen-ruler mr-2"></i> Kerjakan Post Test
@@ -418,9 +392,8 @@
                     </div>
                 </div>
 
-                <!-- 3. MATERI BOX (GRID 3x4 CARDS + FILTERS + STICKY HEADER) -->
+                <!-- 3. MATERI BOX -->
                 <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
-                    <!-- Sticky Header -->
                     <div class="sticky top-[61px] z-20 bg-white/95 backdrop-blur-md px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <h3 class="font-bold text-slate-800 text-base flex items-center">
@@ -429,7 +402,6 @@
                             <p class="text-xs text-slate-400">Bahan bacaan persiapan keluarga sakinah, kesehatan, dan fikih munakahat.</p>
                         </div>
 
-                        <!-- Filter Controls -->
                         <div class="flex items-center space-x-3">
                             <select id="materiFilterCategory" onchange="filterMateriPeserta()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
                                 <option value="ALL">Semua Kategori</option>
@@ -443,17 +415,14 @@
                         </div>
                     </div>
 
-                    <!-- Cards Grid 3x4 Aspect Ratio -->
                     <div class="p-6">
                         <div id="materiGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             <!-- Items dynamically generated -->
                         </div>
 
-                        <!-- Pagination Bar -->
                         <div class="mt-6 flex items-center justify-between border-t pt-4 text-xs">
                             <span class="text-slate-500" id="materiPageInfo">Menampilkan 1-5 dari 10 materi</span>
                             <div class="flex space-x-1" id="materiPaginationBtns">
-                                <!-- Pagination controls -->
                             </div>
                         </div>
                     </div>
@@ -469,7 +438,6 @@
         <!-- ========================================================================= -->
         <section id="adminSection" class="hidden space-y-6">
 
-            <!-- Admin Nav Tabs (4 Menus) -->
             <div class="bg-white rounded-2xl p-2 shadow-card border border-slate-200/80 flex flex-wrap gap-1 text-xs font-bold">
                 <button onclick="setAdminTab('monitoring')" id="tabBtnMonitoring" class="flex-1 py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 bg-indigo-600 text-white shadow-md">
                     <i class="fa-solid fa-users-rectangle text-sm"></i>
@@ -491,21 +459,16 @@
 
             <!-- ADMIN TAB 1: MONITORING PESERTA -->
             <div id="adminTabMonitoring" class="space-y-4">
-
-                <!-- Filter Controls & Export -->
                 <div class="bg-white rounded-2xl p-4 shadow-card border border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
-                        <!-- Filter Tgl Akad -->
                         <select id="admFilterAkad" onchange="renderMonitoringTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
                             <option value="ALL">Semua Tanggal Akad</option>
                         </select>
 
-                        <!-- Filter Tgl Bimwin Offline -->
                         <select id="admFilterBimwin" onchange="renderMonitoringTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
                             <option value="ALL">Semua Tanggal Bimwin</option>
                         </select>
 
-                        <!-- Filter Status Post Test -->
                         <select id="admFilterPostStatus" onchange="renderMonitoringTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
                             <option value="ALL">Semua Status Post Test</option>
                             <option value="BELUM">Belum Mengerjakan Semua</option>
@@ -524,7 +487,6 @@
                     </div>
                 </div>
 
-                <!-- Data Table -->
                 <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
@@ -539,7 +501,6 @@
                                 </tr>
                             </thead>
                             <tbody id="tableMonitoringBody" class="divide-y divide-slate-100 text-xs">
-                                <!-- Dynamic rows -->
                             </tbody>
                         </table>
                     </div>
@@ -590,7 +551,6 @@
                                 </tr>
                             </thead>
                             <tbody id="tableSoalBody" class="divide-y divide-slate-100 text-xs">
-                                <!-- Dynamic soal rows -->
                             </tbody>
                         </table>
                     </div>
@@ -601,7 +561,7 @@
             <div id="adminTabMateri" class="hidden space-y-4">
                 <div class="bg-white rounded-2xl p-4 shadow-card border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                        <input type="text" id="admMateriSearch" onkeyup="renderAdminMateriGrid()" placeholder="Cari Judul Materi..." class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                        <input type="text" id="admMateriSearch" onkeyup="renderAdminMateriGrid()" placeholder="Cari Judul..." class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
                         <select id="admMateriKategori" onchange="renderAdminMateriGrid()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
                             <option value="ALL">Semua Kategori</option>
                             <option value="Fikih Munakahat">Fikih Munakahat</option>
@@ -618,7 +578,6 @@
 
                 <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
                     <div id="adminMateriGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        <!-- Dynamic items -->
                     </div>
                 </div>
             </div>
@@ -626,7 +585,6 @@
             <!-- ADMIN TAB 4: PENGATURAN -->
             <div id="adminTabPengaturan" class="hidden space-y-6">
                 
-                <!-- Profil Instansi KUA -->
                 <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
                     <h3 class="font-bold text-slate-800 text-sm border-b pb-3 mb-4 flex items-center">
                         <i class="fa-solid fa-building-columns text-indigo-600 mr-2"></i> Profil Instansi KUA
@@ -656,7 +614,6 @@
                     </form>
                 </div>
 
-                <!-- Template Placeholder Info -->
                 <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 text-xs text-indigo-900 space-y-2">
                     <h4 class="font-bold flex items-center"><i class="fa-solid fa-code mr-2 text-indigo-600"></i> Placeholders Template yang Tersedia:</h4>
                     <div class="flex flex-wrap gap-1.5 font-mono text-[11px]">
@@ -672,9 +629,7 @@
                     </div>
                 </div>
 
-                <!-- Template Settings: Undangan & Sertifikat -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Template Undangan -->
                     <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
                         <h3 class="font-bold text-slate-800 text-sm border-b pb-3 mb-4 flex items-center justify-between">
                             <span><i class="fa-solid fa-envelope-open-text text-amber-500 mr-2"></i> Template Undangan Bimwin</span>
@@ -687,7 +642,7 @@
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 mb-1">Google Docs / Slide Template ID</label>
-                                <input type="text" id="cfgGdocUndangan" value="1A2B3C4D5E6F7G8H9I0_UNDANGAN_DOC_ID" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+                                <input type="text" id="cfgGdocUndangan" value="1A2B3C4D5E6F7G8H9I0_UNDANGAN" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
                             </div>
                             <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition">
                                 Simpan Setting Undangan
@@ -695,7 +650,6 @@
                         </form>
                     </div>
 
-                    <!-- Template Sertifikat -->
                     <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
                         <h3 class="font-bold text-slate-800 text-sm border-b pb-3 mb-4 flex items-center justify-between">
                             <span><i class="fa-solid fa-award text-emerald-600 mr-2"></i> Template Sertifikat Bimwin</span>
@@ -708,7 +662,7 @@
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-700 mb-1">Google Docs / Slide Template ID</label>
-                                <input type="text" id="cfgGdocSertifikat" value="1X2Y3Z4W5V6U7T8S_SERTIFIKAT_SLIDE_ID" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+                                <input type="text" id="cfgGdocSertifikat" value="1X2Y3Z4W5V6U7T8S_SERTIFIKAT" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
                             </div>
                             <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition">
                                 Simpan Setting Sertifikat
@@ -717,7 +671,6 @@
                     </div>
                 </div>
 
-                <!-- Post Test KKM & Timer Settings -->
                 <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
                     <h3 class="font-bold text-slate-800 text-sm border-b pb-3 mb-4 flex items-center">
                         <i class="fa-solid fa-sliders text-purple-600 mr-2"></i> Pengaturan Post-Test
@@ -745,11 +698,8 @@
 
     </main>
 
-    <!-- ========================================================================= -->
-    <!-- FULLSCREEN POST TEST OVERLAY MODAL                                        -->
-    <!-- ========================================================================= -->
+    <!-- FULLSCREEN POST TEST OVERLAY MODAL -->
     <div id="postTestModal" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-md hidden flex flex-col justify-between p-4 sm:p-8 text-white overflow-y-auto">
-        <!-- Header & Countdown Timer Top Right -->
         <div class="flex items-center justify-between border-b border-slate-800 pb-4 max-w-4xl mx-auto w-full">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center font-bold text-lg">
@@ -757,22 +707,20 @@
                 </div>
                 <div>
                     <h3 class="font-bold text-base">Ujian Post-Test Bimwin</h3>
-                    <p class="text-xs text-slate-400" id="testUserIdentity">Peserta: Ahmad (Pria)</p>
+                    <p class="text-xs text-slate-400" id="testUserIdentity">Peserta: -</p>
                 </div>
             </div>
 
-            <!-- Timer Countdown -->
             <div class="flex items-center space-x-2 bg-slate-800 px-4 py-2 rounded-2xl border border-slate-700">
                 <i class="fa-regular fa-clock text-amber-400 animate-pulse text-base"></i>
                 <span class="font-mono font-extrabold text-lg text-amber-400" id="testTimerText">15:00</span>
             </div>
         </div>
 
-        <!-- Questions Card Area -->
         <div class="max-w-3xl mx-auto w-full py-8 space-y-6">
             <div class="flex items-center justify-between text-xs text-slate-400">
                 <span id="questionCounter">Soal 1 dari 5</span>
-                <span class="px-2.5 py-1 rounded bg-purple-900/50 text-purple-300 font-semibold" id="questionCategoryTag">Fikih Munakahat</span>
+                <span class="px-2.5 py-1 rounded bg-purple-900/50 text-purple-300 font-semibold" id="questionCategoryTag">-</span>
             </div>
 
             <div class="bg-slate-800/80 border border-slate-700 p-6 sm:p-8 rounded-3xl space-y-6 shadow-2xl">
@@ -781,12 +729,10 @@
                 </h4>
 
                 <div class="space-y-3" id="optionsContainer">
-                    <!-- Options buttons -->
                 </div>
             </div>
         </div>
 
-        <!-- Bottom Action Bar -->
         <div class="flex items-center justify-between max-w-3xl mx-auto w-full border-t border-slate-800 pt-4">
             <button id="btnPrevQuestion" onclick="navigateQuestion(-1)" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold transition disabled:opacity-30">
                 <i class="fa-solid fa-arrow-left mr-2"></i> Sebelumnya
@@ -801,7 +747,6 @@
             </button>
         </div>
     </div>
-
 
     <!-- EDIT PROFILE MODAL -->
     <div id="editProfileModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
@@ -844,9 +789,7 @@
                 <button onclick="closeDetailPesertaModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
-            <!-- Two Columns (Left Male, Right Female) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <!-- Male -->
                 <div class="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-2">
                     <span class="text-xs font-bold text-blue-700 uppercase tracking-wide flex items-center"><i class="fa-solid fa-mars mr-1.5"></i> Catin Pria</span>
                     <div><span class="text-slate-400">Nama:</span> <p class="font-bold text-slate-800" id="detNamaPria">-</p></div>
@@ -856,7 +799,6 @@
                     <div class="pt-2 border-t border-blue-200/50"><span class="text-slate-400">Nilai Post Test:</span> <p class="font-extrabold text-blue-700 text-sm" id="detScorePria">0</p></div>
                 </div>
 
-                <!-- Female -->
                 <div class="p-4 bg-rose-50/50 rounded-2xl border border-rose-100 space-y-2">
                     <span class="text-xs font-bold text-rose-700 uppercase tracking-wide flex items-center"><i class="fa-solid fa-venus mr-1.5"></i> Catin Wanita</span>
                     <div><span class="text-slate-400">Nama:</span> <p class="font-bold text-slate-800" id="detNamaWanita">-</p></div>
@@ -867,7 +809,6 @@
                 </div>
             </div>
 
-            <!-- Document Actions -->
             <div class="pt-3 border-t flex flex-wrap gap-2 justify-end">
                 <button id="btnViewUndanganAdmin" onclick="viewUndanganFromAdmin()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center">
                     <i class="fa-solid fa-file-pdf mr-2"></i> Lihat Surat Undangan
@@ -972,279 +913,246 @@
         </div>
     </div>
 
-    <!-- GAS MODAL INFO / CONNECTOR SETUP -->
-    <div id="gasModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between border-b pb-3">
-                <h3 class="font-bold text-slate-800 text-sm flex items-center"><i class="fa-solid fa-database text-emerald-600 mr-2"></i> AppsScript Backend Bridge</h3>
-                <button onclick="toggleGasModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <p class="text-xs text-slate-600 leading-relaxed">
-                Aplikasi frontend ini siap dihubungkan langsung dengan Web App Google Apps Script (`doGet` / `doPost`) untuk menyimpan data ke Google Sheets.
-            </p>
-            <div class="space-y-2 text-xs">
-                <label class="block font-semibold text-slate-700">URL Web App Apps Script (Opsional)</label>
-                <input type="url" id="gasWebAppUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
-            </div>
-            <div class="pt-2 flex justify-end space-x-2">
-                <button onclick="toggleGasModal()" class="px-5 py-2 bg-slate-800 text-white font-bold rounded-xl text-xs">Tutup</button>
-            </div>
-        </div>
-    </div>
-
 
     <!-- ========================================================================= -->
     <!-- APPLICATION JAVASCRIPT LOGIC                                             -->
     <!-- ========================================================================= -->
     <script>
-        /* -------------------------------------------------------------------------
-         * LOCAL STORAGE INITIAL SEED DATA
-         * ------------------------------------------------------------------------- */
-        const DEFAULT_BIMWIN_DATES = ["2026-10-20", "2026-10-25", "2026-11-05", "2026-11-12"];
+        let GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbypbqFV8Uy_MGTo7SSunXrh7gOEtcwDTlhbm4vzDBBPZIDT-nhXg351yNQQX1bJFHzT5w/exec"; // Masukkan URL Google Apps Script Web App di sini jika terhubung
 
-        const INITIAL_KUA_SETTINGS = {
-            namaKua: "KUA Kecamatan Smart Kota",
-            kepalaKua: "H. Ahmad Fauzi, S.Ag., M.H.",
-            nipKepala: "19780512 200312 1 002",
-            alamatKua: "Jl. Masjid Agung No. 12, Pusat Kota",
-            formatUndangan: "B-{COUNTER}/Kua.13.01/PW.01/{YEAR}",
-            gdocUndangan: "1A2B3C4D5E6F7G8H9I0_UNDANGAN",
-            counterUndangan: 101,
-            formatSertifikat: "SERT/{COUNTER}/BIMWIN-KUA/{MONTH}/{YEAR}",
-            gdocSertifikat: "1X2Y3Z4W5V6U7T8S_SERTIFIKAT",
-            counterSertifikat: 501,
-            kkm: 75,
-            waktuTes: 15
-        };
-
-        const INITIAL_COUPLES = [
-            {
-                id: "CP-1001",
-                nikPria: "3201011505950001",
-                namaPria: "Ahmad Rizki",
-                waPria: "081234567890",
-                alamatPria: "Jl. Pemuda No. 10",
-                nikWanita: "3201015208960002",
-                namaWanita: "Siti Nurhaliza",
-                waWanita: "089876543210",
-                alamatWanita: "Jl. Mawar No. 4",
-                tglAkad: "2026-11-20",
-                tglBimwin: "2026-10-20",
-                offlineConfirmed: true,
-                priaPostTest: { completed: true, score: 90, passed: true },
-                wanitaPostTest: { completed: true, score: 85, passed: true },
-                noUndangan: "B-101/Kua.13.01/PW.01/2026",
-                noSertifikat: "SERT/501/BIMWIN-KUA/10/2026"
-            },
-            {
-                id: "CP-1002",
-                nikPria: "3201011010940003",
-                namaPria: "Budi Santoso",
-                waPria: "08111222333",
-                alamatPria: "Jl. Melati No. 8",
-                nikWanita: "3201014505970004",
-                namaWanita: "Dewi Lestari",
-                waWanita: "08555666777",
-                alamatWanita: "Jl. Anggrek No. 12",
-                tglAkad: "2026-11-30",
-                tglBimwin: "2026-10-25",
-                offlineConfirmed: false,
-                priaPostTest: { completed: false, score: 0, passed: false },
-                wanitaPostTest: { completed: false, score: 0, passed: false },
-                noUndangan: "B-102/Kua.13.01/PW.01/2026",
-                noSertifikat: ""
-            }
-        ];
-
-        const INITIAL_SOAL = [
-            {
-                id: "S01",
-                kategori: "Fikih Munakahat",
-                jenis: "Pilihan Ganda Biasa",
-                peruntukan: "Pria dan Wanita",
-                pembuat: "KUA Smart",
-                teks: "Apa kewajiban utama suami terhadap istri setelah melaksanakan akad nikah yang sah?",
-                optA: "Memberikan nafkah lahir dan batin",
-                optB: "Menyiapkan hiburan",
-                optC: "Membawa istri pindah rumah",
-                optD: "Membeli perhiasan mahal",
-                kunci: "A",
-                status: "Aktif"
-            },
-            {
-                id: "S02",
-                kategori: "Keluarga Sakinah",
-                jenis: "Pilihan Ganda Biasa",
-                peruntukan: "Pria Saja",
-                pembuat: "KUA Smart",
-                teks: "Bagaimanakah sikap kepala keluarga jika terjadi kesalahpahaman dalam rumah tangga?",
-                optA: "Mengabaikan masalah",
-                optB: "Bermusyawarah dengan lemah lembut dan penuh kesabaran",
-                optC: "Mengambil keputusan sepihak",
-                optD: "Marah-marah di media sosial",
-                kunci: "B",
-                status: "Aktif"
-            },
-            {
-                id: "S03",
-                kategori: "Kesehatan Reproduksi",
-                jenis: "Pilihan Ganda Biasa",
-                peruntukan: "Wanita Saja",
-                pembuat: "Puskesmas KUA",
-                teks: "Mengapa pemeriksaan kesehatan awal (catin) penting dilakukan bagi calon pengantin wanita?",
-                optA: "Hanya syarat administratif",
-                optB: "Mendeteksi risiko anemia dan kesiapan kehamilan sehat",
-                optC: "Menambah biaya nikah",
-                optD: "Memastikan kecantikan",
-                kunci: "B",
-                status: "Aktif"
-            },
-            {
-                id: "S04",
-                kategori: "Psikologi Keluarga",
-                jenis: "Pilihan Ganda Biasa",
-                peruntukan: "Pria dan Wanita",
-                pembuat: "Konselor KUA",
-                teks: "Kunci utama menciptakan komunikasi yang efektif dalam pernikahan adalah...",
-                optA: "Selalu mengalah tanpa bicara",
-                optB: "Mendengarkan secara aktif dan saling menghargai",
-                optC: "Sering memberi hadiah",
-                optD: "Saling berargumen hingga menang",
-                kunci: "B",
-                status: "Aktif"
-            }
-        ];
-
-        const INITIAL_MATERI = [
-            {
-                id: "M01",
-                judul: "Fondasi Keluarga Sakinah Mawaddah Wa Rahmah",
-                kategori: "Keluarga Sakinah",
-                pengarang: "Kementerian Agama RI",
-                pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-            },
-            {
-                id: "M02",
-                judul: "Panduan Fikih Hak dan Kewajiban Suami Istri",
-                kategori: "Fikih Munakahat",
-                pengarang: "Tim Pakar KUA",
-                pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-            },
-            {
-                id: "M03",
-                judul: "Manajemen Keuangan Rumah Tangga Islami",
-                kategori: "Psikologi Keluarga",
-                pengarang: "Konselor Keuangan",
-                pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-            },
-            {
-                id: "M04",
-                judul: "Kesehatan Reproduksi Catin & Pencegahan Stunting",
-                kategori: "Kesehatan Reproduksi",
-                pengarang: "Dinas Kesehatan",
-                pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-            }
-        ];
-
-        /* -------------------------------------------------------------------------
-         * STATE INITIALIZATION
-         * ------------------------------------------------------------------------- */
+        // Inisialisasi State Aplikasi
         let state = {
-            role: 'peserta', // 'peserta' or 'admin'
-            activeUser: null, // logged couple object + gender info { couple, gender: 'PRIA'/'WANITA' }
-            couples: JSON.parse(localStorage.getItem('bimwin_couples')) || INITIAL_COUPLES,
-            soal: JSON.parse(localStorage.getItem('bimwin_soal')) || INITIAL_SOAL,
-            materi: JSON.parse(localStorage.getItem('bimwin_materi')) || INITIAL_MATERI,
-            settings: JSON.parse(localStorage.getItem('bimwin_settings')) || INITIAL_KUA_SETTINGS,
+            role: 'peserta',
+            isAdminAuthenticated: false,
+            activeUser: null, // { couple, gender: 'PRIA' | 'WANITA' }
+            couples: [
+                {
+                    id: 'CP-1001',
+                    nikPria: '3201011508950001',
+                    namaPria: 'Ahmad Rizki',
+                    waPria: '081234567890',
+                    alamatPria: 'Jl. Merdeka No. 12, Smart Kota',
+                    nikWanita: '3201015509960002',
+                    namaWanita: 'Siti Nurhaliza',
+                    waWanita: '089876543210',
+                    alamatWanita: 'Jl. Mawar No. 4, Smart Kota',
+                    tglAkad: '2026-10-15',
+                    tglBimwin: '2026-10-10',
+                    offlineConfirmed: true,
+                    priaPostTest: { completed: true, score: 85, passed: true },
+                    wanitaPostTest: { completed: true, score: 90, passed: true },
+                    noUndangan: 'B-101/Kua.13.01/PW.01/2026',
+                    noSertifikat: 'SERT/501/BIMWIN-KUA/10/2026'
+                }
+            ],
+            soal: [
+                {
+                    id: 'S01',
+                    kategori: 'Fikih Munakahat',
+                    pembuat: 'KUA Smart',
+                    jenis: 'Pilihan Ganda Biasa',
+                    peruntukan: 'Pria dan Wanita',
+                    teks: 'Apa rukun nikah yang utama dalam Islam?',
+                    optA: 'Ijab Qabul, Calon Suami, Calon Istri, Wali, Dua Saksi',
+                    optB: 'Mahar, Resepsi, Penghulu',
+                    optC: 'Surat N3, Surat N4, Pas Foto',
+                    optD: 'Cincin Kawin dan Seragam',
+                    kunci: 'A',
+                    status: 'Aktif'
+                },
+                {
+                    id: 'S02',
+                    kategori: 'Keluarga Sakinah',
+                    pembuat: 'KUA Smart',
+                    jenis: 'Pilihan Ganda Biasa',
+                    peruntukan: 'Pria dan Wanita',
+                    teks: 'Sikap utama dalam menyelesaikan konflik rumah tangga menurut ajaran Islam adalah...',
+                    optA: 'Membawa masalah ke media sosial',
+                    optB: 'Musyawarah dengan kepala dingin dan saling memaafkan',
+                    optC: 'Saling mendiamkan selama berbulan-bulan',
+                    optD: 'Mengambil keputusan sepihak tanpa diskusi',
+                    kunci: 'B',
+                    status: 'Aktif'
+                }
+            ],
+            materi: [
+                {
+                    id: 'M01',
+                    judul: 'Panduan Menuju Keluarga Sakinah Mawaddah Warahmah',
+                    kategori: 'Keluarga Sakinah',
+                    pengarang: 'Kementerian Agama RI',
+                    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+                },
+                {
+                    id: 'M02',
+                    judul: 'Fikih Munakahat & Hak Kewajiban Suami Istri',
+                    kategori: 'Fikih Munakahat',
+                    pengarang: 'Bimwin KUA',
+                    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+                },
+                {
+                    id: 'M03',
+                    judul: 'Kesehatan Reproduksi & Pencegahan Stunting',
+                    kategori: 'Kesehatan Reproduksi',
+                    pengarang: 'Dinas Kesehatan & KUA',
+                    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+                }
+            ],
             materiPage: 1,
-            materiPerPage: 5,
-            activeExam: null // timer, questions, currentIdx, answers
+            materiPerPage: 10,
+            settings: {
+                namaKua: 'KUA Kecamatan Smart Kota',
+                kepalaKua: 'H. Ahmad Supriyadi, S.Ag., M.H.',
+                nipKepala: '19750812 200212 1 003',
+                alamatKua: 'Jl. Pemuda No. 45, Smart Kota',
+                counterUndangan: 102,
+                counterSertifikat: 502,
+                formatUndangan: 'B-{COUNTER}/Kua.13.01/PW.01/{YEAR}',
+                formatSertifikat: 'SERT/{COUNTER}/BIMWIN-KUA/{MONTH}/{YEAR}',
+                gdocUndangan: '',
+                gdocSertifikat: '',
+                kkm: 75,
+                waktuTes: 15
+            },
+            activeExam: null
         };
 
-        function saveState() {
-            localStorage.setItem('bimwin_couples', JSON.stringify(state.couples));
-            localStorage.setItem('bimwin_soal', JSON.stringify(state.soal));
-            localStorage.setItem('bimwin_materi', JSON.stringify(state.materi));
-            localStorage.setItem('bimwin_settings', JSON.stringify(state.settings));
-        }
-
-        window.onload = function() {
-            renderHeaderKuaInfo();
-            populateBimwinDateDropdowns();
-            renderMateriGrid();
-            renderAdminAll();
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-rose-600' : (type === 'warning' ? 'bg-amber-600' : 'bg-emerald-600');
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-xl shadow-lg font-semibold text-xs flex items-center space-x-2 transition-all duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
             
-            // Default load check
-            switchRole('peserta');
-        };
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
 
-        function renderHeaderKuaInfo() {
-            document.getElementById('headerKuaName').innerText = state.settings.namaKua;
-            document.getElementById('cfgNamaKua').value = state.settings.namaKua;
-            document.getElementById('cfgKepalaKua').value = state.settings.kepalaKua;
-            document.getElementById('cfgNipKepala').value = state.settings.nipKepala;
-            document.getElementById('cfgAlamatKua').value = state.settings.alamatKua;
-            document.getElementById('cfgKkm').value = state.settings.kkm;
-            document.getElementById('cfgWaktuTes').value = state.settings.waktuTes;
-            document.getElementById('kkmInfoLabel').innerText = `KKM: ${state.settings.kkm}`;
-            document.getElementById('lblCounterUndangan').innerText = `Counter: ${state.settings.counterUndangan}`;
-            document.getElementById('lblCounterSertifikat').innerText = `Counter: ${state.settings.counterSertifikat}`;
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
         }
 
-        function populateBimwinDateDropdowns() {
-            const selectReg = document.getElementById('regTglBimwin');
-            const selectEdit = document.getElementById('editTglBimwin');
-            selectReg.innerHTML = '<option value="">-- Pilih Tanggal Bimwin --</option>';
-            selectEdit.innerHTML = '';
-
-            DEFAULT_BIMWIN_DATES.forEach(d => {
-                const opt1 = document.createElement('option');
-                opt1.value = d;
-                opt1.textContent = formatDateID(d);
-                selectReg.appendChild(opt1);
-
-                const opt2 = document.createElement('option');
-                opt2.value = d;
-                opt2.textContent = formatDateID(d);
-                selectEdit.appendChild(opt2);
-            });
-        }
-
-        function updateBimwinDateOptions() {
-            const akadVal = document.getElementById('regTglAkad').value;
-            if (!akadVal) return;
-            const selectReg = document.getElementById('regTglBimwin');
-            selectReg.innerHTML = '<option value="">-- Pilih Tanggal Bimwin --</option>';
-
-            DEFAULT_BIMWIN_DATES.filter(d => d < akadVal).forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d;
-                opt.textContent = formatDateID(d);
-                selectReg.appendChild(opt);
-            });
+        function showSyncLoader(show) {
+            const loader = document.getElementById('globalSyncLoader');
+            if (loader) {
+                if (show) loader.classList.remove('hidden');
+                else loader.classList.add('hidden');
+            }
         }
 
         function formatDateID(dateStr) {
             if (!dateStr) return '-';
             const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
             return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         }
 
-        function showToast(msg, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            const color = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-slate-800');
-            toast.className = `${color} text-white px-4 py-3 rounded-2xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition duration-300 transform translate-y-2`;
-            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>${msg}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-4');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+        function updateBimwinDateOptions() {
+            const tglAkad = document.getElementById('regTglAkad').value;
+            const selBimwin = document.getElementById('regTglBimwin');
+            const editSelBimwin = document.getElementById('editTglBimwin');
+            if (!tglAkad) return;
+
+            const akadDate = new Date(tglAkad);
+            const options = [];
+            for (let i = 7; i >= 1; i--) {
+                const optDate = new Date(akadDate);
+                optDate.setDate(akadDate.getDate() - i);
+                const isoStr = optDate.toISOString().split('T')[0];
+                options.push(isoStr);
+            }
+
+            const fillSelect = (selectElem) => {
+                if (!selectElem) return;
+                const currentVal = selectElem.value;
+                selectElem.innerHTML = '<option value="">-- Pilih Tanggal Bimwin --</option>';
+                options.forEach(opt => {
+                    selectElem.innerHTML += `<option value="${opt}">${formatDateID(opt)} (${opt})</option>`;
+                });
+                if (currentVal && options.includes(currentVal)) {
+                    selectElem.value = currentVal;
+                }
+            };
+
+            fillSelect(selBimwin);
+            fillSelect(editSelBimwin);
         }
 
+        function renderHeaderKuaInfo() {
+            const hName = document.getElementById('headerKuaName');
+            if (hName && state.settings.namaKua) {
+                hName.innerText = state.settings.namaKua;
+            }
+            const kkmLabel = document.getElementById('kkmInfoLabel');
+            if (kkmLabel && state.settings.kkm) {
+                kkmLabel.innerText = `KKM: ${state.settings.kkm}`;
+            }
+            
+            if (document.getElementById('cfgNamaKua')) document.getElementById('cfgNamaKua').value = state.settings.namaKua || '';
+            if (document.getElementById('cfgKepalaKua')) document.getElementById('cfgKepalaKua').value = state.settings.kepalaKua || '';
+            if (document.getElementById('cfgNipKepala')) document.getElementById('cfgNipKepala').value = state.settings.nipKepala || '';
+            if (document.getElementById('cfgAlamatKua')) document.getElementById('cfgAlamatKua').value = state.settings.alamatKua || '';
+            if (document.getElementById('cfgFormatUndangan')) document.getElementById('cfgFormatUndangan').value = state.settings.formatUndangan || '';
+            if (document.getElementById('cfgGdocUndangan')) document.getElementById('cfgGdocUndangan').value = state.settings.gdocUndangan || '';
+            if (document.getElementById('cfgFormatSertifikat')) document.getElementById('cfgFormatSertifikat').value = state.settings.formatSertifikat || '';
+            if (document.getElementById('cfgGdocSertifikat')) document.getElementById('cfgGdocSertifikat').value = state.settings.gdocSertifikat || '';
+            if (document.getElementById('cfgKkm')) document.getElementById('cfgKkm').value = state.settings.kkm || 75;
+            if (document.getElementById('cfgWaktuTes')) document.getElementById('cfgWaktuTes').value = state.settings.waktuTes || 15;
+            if (document.getElementById('lblCounterUndangan')) document.getElementById('lblCounterUndangan').innerText = `Counter: ${state.settings.counterUndangan || 101}`;
+            if (document.getElementById('lblCounterSertifikat')) document.getElementById('lblCounterSertifikat').innerText = `Counter: ${state.settings.counterSertifikat || 501}`;
+        }
+
+        async function fetchAllDataFromGAS() {
+            if (!GAS_WEB_APP_URL) return;
+            showSyncLoader(true);
+            try {
+                const res = await fetch(`${GAS_WEB_APP_URL}?action=getAllData`);
+                const json = await res.json();
+                if (json) {
+                    if (json.couples) state.couples = json.couples;
+                    if (json.soal) state.soal = json.soal;
+                    if (json.materi) state.materi = json.materi;
+                    if (json.settings) state.settings = { ...state.settings, ...json.settings };
+                    renderHeaderKuaInfo();
+                    renderMateriGrid();
+                    if (state.role === 'admin') renderAdminAll();
+                }
+            } catch (err) {
+                console.warn("GAS Fetch Error:", err);
+            } finally {
+                showSyncLoader(false);
+            }
+        }
+
+        async function postToGAS(action, payload) {
+            if (!GAS_WEB_APP_URL) return;
+            showSyncLoader(true);
+            try {
+                await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, data: payload })
+                });
+            } catch (err) {
+                console.warn("GAS Post Error:", err);
+            } finally {
+                showSyncLoader(false);
+            }
+        }
+
+        window.onload = function() {
+            renderHeaderKuaInfo();
+            renderMateriGrid();
+            fetchAllDataFromGAS();
+        };
+
         /* -------------------------------------------------------------------------
-         * ROLE SWITCHING LOGIC
+         * ROLE SWITCHING & AUTOMATIC ADMIN VERIFICATION (NO MANUAL FORM)
          * ------------------------------------------------------------------------- */
         function switchRole(newRole) {
             state.role = newRole;
@@ -1264,6 +1172,38 @@
                 secA.classList.remove('hidden');
                 secP.classList.add('hidden');
                 renderAdminAll();
+            }
+        }
+
+        async function requestAdminAccess() {
+            if (state.isAdminAuthenticated) {
+                switchRole('admin');
+                return;
+            }
+
+            if (GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("...")) {
+                showSyncLoader(true);
+                try {
+                    // Strictly check browser active Google email session via Apps Script
+                    const res = await fetch(`${GAS_WEB_APP_URL}?action=verifyAdmin`);
+                    const json = await res.json();
+
+                    if (json && json.success) {
+                        state.isAdminAuthenticated = true;
+                        switchRole('admin');
+                        showToast(`Akses Admin Otomatis Diterima! (${json.activeEmail})`, "success");
+                        return;
+                    } else {
+                        showToast("Akses ditolak! Anda tidak memiliki hak akses sebagai Admin KUA.", "error");
+                    }
+                } catch (err) {
+                    console.warn("GAS Admin Session Check Error:", err);
+                    showToast("Gagal memverifikasi akun Admin dengan server Apps Script.", "error");
+                } finally {
+                    showSyncLoader(false);
+                }
+            } else {
+                showToast("Akses ditolak! URL Apps Script backend belum dikonfigurasi.", "error");
             }
         }
 
@@ -1295,25 +1235,25 @@
         function handleLoginPeserta(e) {
             e.preventDefault();
             const nikInput = document.getElementById('loginNik').value.trim();
-            const couple = state.couples.find(c => c.nikPria === nikInput || c.nikWanita === nikInput);
+            const couple = state.couples.find(c => String(c.nikPria) === nikInput || String(c.nikWanita) === nikInput);
 
             if (!couple) {
                 showToast("NIK tidak ditemukan! Silakan daftar Bimwin terlebih dahulu.", "error");
                 return;
             }
 
-            const gender = couple.nikPria === nikInput ? 'PRIA' : 'WANITA';
+            const gender = String(couple.nikPria) === nikInput ? 'PRIA' : 'WANITA';
             state.activeUser = { couple, gender };
             showToast(`Login Berhasil sebagai Catin ${gender === 'PRIA' ? 'Pria' : 'Wanita'}!`);
             renderPesertaDashboard();
         }
 
-        function handleRegisterPeserta(e) {
+        async function handleRegisterPeserta(e) {
             e.preventDefault();
             const nikPria = document.getElementById('regNikPria').value.trim();
             const nikWanita = document.getElementById('regNikWanita').value.trim();
 
-            if (state.couples.some(c => c.nikPria === nikPria || c.nikWanita === nikWanita)) {
+            if (state.couples.some(c => String(c.nikPria) === nikPria || String(c.nikWanita) === nikWanita)) {
                 showToast("NIK Catin Pria/Wanita sudah terdaftar sebelumnya!", "error");
                 return;
             }
@@ -1339,7 +1279,9 @@
 
             state.settings.counterUndangan++;
             state.couples.push(newCouple);
-            saveState();
+            
+            await postToGAS("saveCouple", newCouple);
+            await postToGAS("saveSettings", state.settings);
 
             showToast("Pendaftaran Bimwin Sukses! Silakan Login dengan NIK Anda.");
             setAuthMode('login');
@@ -1353,12 +1295,10 @@
             document.getElementById('pesertaAuthBox').classList.add('hidden');
             document.getElementById('pesertaDashboardBox').classList.remove('hidden');
 
-            // Header Banner
             document.getElementById('welcomeCoupleName').innerText = `${couple.namaPria} & ${couple.namaWanita}`;
             document.getElementById('welcomeScheduleText').innerText = `Jadwal Bimwin Offline: ${formatDateID(couple.tglBimwin)}`;
             document.getElementById('loggedAsRole').innerText = `Login Sebagai Catin ${gender === 'PRIA' ? 'Pria (' + couple.namaPria + ')' : 'Wanita (' + couple.namaWanita + ')'}`;
 
-            // Profile Card
             document.getElementById('badgeGender').innerText = gender === 'PRIA' ? 'Catin Pria' : 'Catin Wanita';
             document.getElementById('badgeGender').className = gender === 'PRIA' ? 'px-2.5 py-1 text-[11px] font-bold rounded-full bg-blue-100 text-blue-700' : 'px-2.5 py-1 text-[11px] font-bold rounded-full bg-rose-100 text-rose-700';
             
@@ -1376,7 +1316,6 @@
                 document.getElementById('profPasangan').innerText = `${couple.namaPria} (Pria)`;
             }
 
-            // Reminder Box Visibility
             const remBox = document.getElementById('reminderAlertBox');
             if (couple.offlineConfirmed) {
                 remBox.classList.add('hidden');
@@ -1385,7 +1324,6 @@
                 document.getElementById('remindBimwinDate').innerText = formatDateID(couple.tglBimwin);
             }
 
-            // Offline Attendance Badge
             const offIcon = document.getElementById('statusOfflineIcon');
             const offText = document.getElementById('statusOfflineText');
             if (couple.offlineConfirmed) {
@@ -1400,7 +1338,6 @@
                 offText.className = "font-bold text-amber-700 text-sm";
             }
 
-            // Post Test Locked/Unlocked Logic
             const lockBox = document.getElementById('postTestLockedBox');
             const unlockBox = document.getElementById('postTestUnlockedBox');
             const btnBar = document.getElementById('postTestButtonsBar');
@@ -1414,13 +1351,15 @@
                 unlockBox.classList.remove('hidden');
                 btnBar.classList.remove('hidden');
 
-                // Update Pria Test Badge & Score
-                document.getElementById('scorePriaText').innerText = couple.priaPostTest.score;
+                const priaTest = couple.priaPostTest || {};
+                const wanitaTest = couple.wanitaPostTest || {};
+
+                document.getElementById('scorePriaText').innerText = priaTest.score || 0;
                 const bPria = document.getElementById('badgeStatusPostPria');
-                if (!couple.priaPostTest.completed) {
+                if (!priaTest.completed) {
                     bPria.className = "px-2 py-0.5 text-[10px] font-bold rounded bg-slate-200 text-slate-600";
                     bPria.innerText = "Belum Tes";
-                } else if (couple.priaPostTest.passed) {
+                } else if (priaTest.passed) {
                     bPria.className = "px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-100 text-emerald-700";
                     bPria.innerText = "LULUS";
                 } else {
@@ -1428,13 +1367,12 @@
                     bPria.innerText = "TIDAK LULUS";
                 }
 
-                // Update Wanita Test Badge & Score
-                document.getElementById('scoreWanitaText').innerText = couple.wanitaPostTest.score;
+                document.getElementById('scoreWanitaText').innerText = wanitaTest.score || 0;
                 const bWanita = document.getElementById('badgeStatusPostWanita');
-                if (!couple.wanitaPostTest.completed) {
+                if (!wanitaTest.completed) {
                     bWanita.className = "px-2 py-0.5 text-[10px] font-bold rounded bg-slate-200 text-slate-600";
                     bWanita.innerText = "Belum Tes";
-                } else if (couple.wanitaPostTest.passed) {
+                } else if (wanitaTest.passed) {
                     bWanita.className = "px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-100 text-emerald-700";
                     bWanita.innerText = "LULUS";
                 } else {
@@ -1442,23 +1380,21 @@
                     bWanita.innerText = "TIDAK LULUS";
                 }
 
-                // Current logged person test status for button label
-                const myTest = gender === 'PRIA' ? couple.priaPostTest : couple.wanitaPostTest;
+                const myTest = gender === 'PRIA' ? priaTest : wanitaTest;
                 const btnStart = document.getElementById('btnStartPostTest');
 
                 if (!myTest.completed) {
                     btnStart.innerHTML = '<i class="fa-solid fa-pen-ruler mr-2"></i> Kerjakan Post Test';
                 } else if (!myTest.passed) {
                     btnStart.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> Kerjakan Ulang Post Test';
-                } else if (myTest.score < 100) {
+                } else if ((myTest.score || 0) < 100) {
                     btnStart.innerHTML = '<i class="fa-solid fa-chart-line mr-2"></i> Tingkatkan Nilai Tes';
                 } else {
                     btnStart.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i> Nilai Anda Sempurna (100)';
                 }
 
-                // Download Sertifikat Button (Unlocked only if BOTH passed)
                 const btnCert = document.getElementById('btnDownloadSertifikat');
-                const bothPassed = couple.priaPostTest.passed && couple.wanitaPostTest.passed;
+                const bothPassed = priaTest.passed && wanitaTest.passed;
                 btnCert.disabled = !bothPassed;
             }
         }
@@ -1486,7 +1422,7 @@
             document.getElementById('editProfileModal').classList.add('hidden');
         }
 
-        function handleSaveProfileEdit(e) {
+        async function handleSaveProfileEdit(e) {
             e.preventDefault();
             if (!state.activeUser) return;
             const { couple, gender } = state.activeUser;
@@ -1502,7 +1438,7 @@
             }
 
             couple.tglBimwin = document.getElementById('editTglBimwin').value;
-            saveState();
+            await postToGAS("saveCouple", couple);
 
             closeEditProfileModal();
             renderPesertaDashboard();
@@ -1516,7 +1452,6 @@
             if (!state.activeUser) return;
             const { couple, gender } = state.activeUser;
 
-            // Filter active questions by peruntukan (gender targeted)
             const availableSoal = state.soal.filter(s => {
                 if (s.status !== 'Aktif') return false;
                 if (s.peruntukan === 'Pria dan Wanita') return true;
@@ -1530,14 +1465,13 @@
                 return;
             }
 
-            // Shuffle questions
             const shuffled = [...availableSoal].sort(() => Math.random() - 0.5);
 
             state.activeExam = {
                 questions: shuffled,
                 currentIdx: 0,
-                answers: {}, // questionId -> chosenOpt
-                timeLeft: state.settings.waktuTes * 60, // seconds
+                answers: {},
+                timeLeft: (state.settings.waktuTes || 15) * 60,
                 timerInterval: null
             };
 
@@ -1592,7 +1526,6 @@
                 optsDiv.appendChild(btn);
             });
 
-            // Nav buttons state
             document.getElementById('btnPrevQuestion').disabled = currentIdx === 0;
             if (currentIdx === questions.length - 1) {
                 document.getElementById('btnNextQuestion').classList.add('hidden');
@@ -1613,7 +1546,7 @@
             renderCurrentQuestion();
         }
 
-        function submitPostTest() {
+        async function submitPostTest() {
             if (state.activeExam.timerInterval) clearInterval(state.activeExam.timerInterval);
 
             const { questions, answers } = state.activeExam;
@@ -1626,7 +1559,8 @@
             });
 
             const finalScore = Math.round((correctCount / questions.length) * 100);
-            const isPassed = finalScore >= state.settings.kkm;
+            const kkmVal = state.settings.kkm || 75;
+            const isPassed = finalScore >= kkmVal;
 
             const { couple, gender } = state.activeUser;
             const resultData = {
@@ -1641,14 +1575,14 @@
                 couple.wanitaPostTest = resultData;
             }
 
-            // If both passed and no certificate number assigned yet
-            if (couple.priaPostTest.passed && couple.wanitaPostTest.passed && !couple.noSertifikat) {
+            if ((couple.priaPostTest || {}).passed && (couple.wanitaPostTest || {}).passed && !couple.noSertifikat) {
                 const now = new Date();
                 couple.noSertifikat = `SERT/${state.settings.counterSertifikat}/BIMWIN-KUA/${now.getMonth() + 1}/${now.getFullYear()}`;
                 state.settings.counterSertifikat++;
+                await postToGAS("saveSettings", state.settings);
             }
 
-            saveState();
+            await postToGAS("saveCouple", couple);
 
             document.getElementById('postTestModal').classList.add('hidden');
             renderPesertaDashboard();
@@ -1656,12 +1590,12 @@
             if (isPassed) {
                 showToast(`Selamat! Anda LULUS Post Test dengan nilai ${finalScore}`, "success");
             } else {
-                showToast(`Nilai Anda ${finalScore} (Belum Lulus KKM ${state.settings.kkm}). Silakan kerjakan ulang!`, "error");
+                showToast(`Nilai Anda ${finalScore} (Belum Lulus KKM ${kkmVal}). Silakan kerjakan ulang!`, "error");
             }
         }
 
         /* -------------------------------------------------------------------------
-         * MATERI GRID & PAGINATION (PESERTA VIEW)
+         * MATERI GRID & PAGINATION
          * ------------------------------------------------------------------------- */
         function renderMateriGrid() {
             const container = document.getElementById('materiGridContainer');
@@ -1676,7 +1610,6 @@
                 return matchCat && matchSearch;
             });
 
-            // Pagination
             const total = filtered.length;
             const totalPages = Math.ceil(total / state.materiPerPage) || 1;
             if (state.materiPage > totalPages) state.materiPage = 1;
@@ -1708,10 +1641,8 @@
                 container.appendChild(card);
             });
 
-            // Page info
             document.getElementById('materiPageInfo').innerText = `Menampilkan ${total === 0 ? 0 : startIdx + 1}-${Math.min(startIdx + state.materiPerPage, total)} dari ${total} materi`;
 
-            // Pagination buttons
             const pNav = document.getElementById('materiPaginationBtns');
             pNav.innerHTML = '';
             for (let i = 1; i <= totalPages; i++) {
@@ -1734,7 +1665,7 @@
         function openPreviewMateri(m) {
             document.getElementById('prevMateriTitle').innerText = m.judul;
             document.getElementById('prevMateriAuthor').innerText = `Pengarang: ${m.pengarang} (${m.kategori})`;
-            document.getElementById('btnMateriOpenPdf').href = m.pdfUrl;
+            document.getElementById('btnMateriOpenPdf').href = m.pdfUrl || '#';
             document.getElementById('previewMateriModal').classList.remove('hidden');
         }
 
@@ -1831,8 +1762,7 @@
                     </p>
 
                     <div style="margin-top: 40px; text-align: right; font-size: 12px; display: inline-block; float: right;">
-                        <p style="margin:0;">Ditetapkan di: Pusat Kota</p>
-                        <p style="margin:2px 0 0 0;">Kepala KUA Kecamatan</p>
+                        <p style="margin:0;">Kepala KUA Kecamatan</p>
                         <div style="height: 50px;"></div>
                         <p style="margin:0; font-weight: bold; text-decoration: underline;">${state.settings.kepalaKua}</p>
                         <p style="margin:0; font-size: 10px;">NIP. ${state.settings.nipKepala}</p>
@@ -1909,9 +1839,11 @@
                 if (filterAkad !== 'ALL' && c.tglAkad !== filterAkad) return false;
                 if (filterBimwin !== 'ALL' && c.tglBimwin !== filterBimwin) return false;
 
-                const bothPassed = c.priaPostTest.passed && c.wanitaPostTest.passed;
-                const onePassed = (c.priaPostTest.passed || c.wanitaPostTest.passed) && !bothPassed;
-                const nonePassed = !c.priaPostTest.passed && !c.wanitaPostTest.passed;
+                const pPass = (c.priaPostTest || {}).passed;
+                const wPass = (c.wanitaPostTest || {}).passed;
+                const bothPassed = pPass && wPass;
+                const onePassed = (pPass || wPass) && !bothPassed;
+                const nonePassed = !pPass && !wPass;
 
                 if (filterPost === 'BELUM' && !nonePassed) return false;
                 if (filterPost === 'LULUS_SATU' && !onePassed) return false;
@@ -1926,11 +1858,14 @@
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50/80 transition";
 
-                const bothPassed = c.priaPostTest.passed && c.wanitaPostTest.passed;
+                const pPass = (c.priaPostTest || {}).passed;
+                const wPass = (c.wanitaPostTest || {}).passed;
+                const bothPassed = pPass && wPass;
+
                 let postBadge = '<span class="px-2 py-1 rounded bg-slate-100 text-slate-600 font-bold text-[10px]">Belum Lulus Semua</span>';
                 if (bothPassed) {
                     postBadge = '<span class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-bold text-[10px]"><i class="fa-solid fa-circle-check mr-1"></i> Lulus Semua</span>';
-                } else if (c.priaPostTest.passed || c.wanitaPostTest.passed) {
+                } else if (pPass || wPass) {
                     postBadge = '<span class="px-2 py-1 rounded bg-amber-100 text-amber-700 font-bold text-[10px]">Lulus 1 Pasangan</span>';
                 }
 
@@ -1955,11 +1890,11 @@
             });
         }
 
-        function toggleOfflineAttendance(coupleId, isChecked) {
+        async function toggleOfflineAttendance(coupleId, isChecked) {
             const c = state.couples.find(item => item.id === coupleId);
             if (c) {
                 c.offlineConfirmed = isChecked;
-                saveState();
+                await postToGAS("saveCouple", c);
                 showToast(`Kehadiran luring ${c.namaPria} & ${c.namaWanita} ${isChecked ? 'Dikonfirmasi' : 'Dibatalkan'}`);
             }
         }
@@ -1983,9 +1918,9 @@
                 'Tgl Akad': c.tglAkad,
                 'Tgl Bimwin': c.tglBimwin,
                 'Hadir Luring': c.offlineConfirmed ? 'YA' : 'BELUM',
-                'Nilai Post Test Pria': c.priaPostTest.score,
-                'Nilai Post Test Wanita': c.wanitaPostTest.score,
-                'Lulus Sertifikat': (c.priaPostTest.passed && c.wanitaPostTest.passed) ? 'YA' : 'TIDAK'
+                'Nilai Post Test Pria': (c.priaPostTest || {}).score || 0,
+                'Nilai Post Test Wanita': (c.wanitaPostTest || {}).score || 0,
+                'Lulus Sertifikat': ((c.priaPostTest || {}).passed && (c.wanitaPostTest || {}).passed) ? 'YA' : 'TIDAK'
             }));
 
             const ws = XLSX.utils.json_to_sheet(data);
@@ -2000,20 +1935,23 @@
             if (!c) return;
             currentDetailCouple = c;
 
+            const priaT = c.priaPostTest || {};
+            const wanT = c.wanitaPostTest || {};
+
             document.getElementById('detNamaPria').innerText = c.namaPria;
             document.getElementById('detNikPria').innerText = c.nikPria;
             document.getElementById('detWaPria').innerText = c.waPria;
             document.getElementById('detAlamatPria').innerText = c.alamatPria;
-            document.getElementById('detScorePria').innerText = `${c.priaPostTest.score} (${c.priaPostTest.passed ? 'Lulus' : 'Belum'})`;
+            document.getElementById('detScorePria').innerText = `${priaT.score || 0} (${priaT.passed ? 'Lulus' : 'Belum'})`;
 
             document.getElementById('detNamaWanita').innerText = c.namaWanita;
             document.getElementById('detNikWanita').innerText = c.nikWanita;
             document.getElementById('detWaWanita').innerText = c.waWanita;
             document.getElementById('detAlamatWanita').innerText = c.alamatWanita;
-            document.getElementById('detScoreWanita').innerText = `${c.wanitaPostTest.score} (${c.wanitaPostTest.passed ? 'Lulus' : 'Belum'})`;
+            document.getElementById('detScoreWanita').innerText = `${wanT.score || 0} (${wanT.passed ? 'Lulus' : 'Belum'})`;
 
             const btnCert = document.getElementById('btnViewSertifikatAdmin');
-            const bothPassed = c.priaPostTest.passed && c.wanitaPostTest.passed;
+            const bothPassed = priaT.passed && wanT.passed;
             btnCert.disabled = !bothPassed;
 
             document.getElementById('detailPesertaModal').classList.remove('hidden');
@@ -2041,7 +1979,6 @@
             const peruntukanFilter = document.getElementById('soalFilterPeruntukan').value;
             const statusFilter = document.getElementById('soalFilterStatus').value;
 
-            // Populate categories dropdown
             const cats = [...new Set(state.soal.map(s => s.kategori))];
             const selCat = document.getElementById('soalFilterKategori');
             selCat.innerHTML = '<option value="ALL">Semua Kategori</option>';
@@ -2091,7 +2028,7 @@
         function openFormSoalModal() {
             document.getElementById('soalId').value = '';
             document.getElementById('soalKategori').value = '';
-            document.getElementById('soalPembuat').value = state.settings.namaKua;
+            document.getElementById('soalPembuat').value = state.settings.namaKua || 'KUA Smart';
             document.getElementById('soalTeks').value = '';
             document.getElementById('optA').value = '';
             document.getElementById('optB').value = '';
@@ -2105,29 +2042,28 @@
             document.getElementById('formSoalModal').classList.add('hidden');
         }
 
-        function handleSaveSoal(e) {
+        async function handleSaveSoal(e) {
             e.preventDefault();
             const sId = document.getElementById('soalId').value;
             const selectedKunci = document.querySelector('input[name="kunciRadio"]:checked')?.value || 'A';
 
+            let soalObj;
             if (sId) {
-                // Edit
-                const s = state.soal.find(item => item.id === sId);
-                if (s) {
-                    s.kategori = document.getElementById('soalKategori').value;
-                    s.pembuat = document.getElementById('soalPembuat').value;
-                    s.jenis = document.getElementById('soalJenis').value;
-                    s.peruntukan = document.getElementById('soalPeruntukan').value;
-                    s.teks = document.getElementById('soalTeks').value;
-                    s.optA = document.getElementById('optA').value;
-                    s.optB = document.getElementById('optB').value;
-                    s.optC = document.getElementById('optC').value;
-                    s.optD = document.getElementById('optD').value;
-                    s.kunci = selectedKunci;
+                soalObj = state.soal.find(item => item.id === sId);
+                if (soalObj) {
+                    soalObj.kategori = document.getElementById('soalKategori').value;
+                    soalObj.pembuat = document.getElementById('soalPembuat').value;
+                    soalObj.jenis = document.getElementById('soalJenis').value;
+                    soalObj.peruntukan = document.getElementById('soalPeruntukan').value;
+                    soalObj.teks = document.getElementById('soalTeks').value;
+                    soalObj.optA = document.getElementById('optA').value;
+                    soalObj.optB = document.getElementById('optB').value;
+                    soalObj.optC = document.getElementById('optC').value;
+                    soalObj.optD = document.getElementById('optD').value;
+                    soalObj.kunci = selectedKunci;
                 }
             } else {
-                // Create
-                const newS = {
+                soalObj = {
                     id: 'S' + String(state.soal.length + 1).padStart(2, '0'),
                     kategori: document.getElementById('soalKategori').value,
                     pembuat: document.getElementById('soalPembuat').value,
@@ -2141,10 +2077,10 @@
                     kunci: selectedKunci,
                     status: 'Aktif'
                 };
-                state.soal.push(newS);
+                state.soal.push(soalObj);
             }
 
-            saveState();
+            await postToGAS("saveSoal", soalObj);
             closeFormSoalModal();
             renderSoalTable();
             showToast("Soal berhasil disimpan!");
@@ -2172,18 +2108,18 @@
             document.getElementById('formSoalModal').classList.remove('hidden');
         }
 
-        function toggleStatusSoal(id) {
+        async function toggleStatusSoal(id) {
             const s = state.soal.find(item => item.id === id);
             if (s) {
                 s.status = s.status === 'Aktif' ? 'Nonaktif' : 'Aktif';
-                saveState();
+                await postToGAS("saveSoal", s);
                 renderSoalTable();
             }
         }
 
-        function deleteSoal(id) {
+        async function deleteSoal(id) {
             state.soal = state.soal.filter(item => item.id !== id);
-            saveState();
+            await postToGAS("deleteSoal", { id: id });
             renderSoalTable();
             showToast("Soal telah dihapus!");
         }
@@ -2224,18 +2160,18 @@
             });
         }
 
-        function deleteMateri(id) {
+        async function deleteMateri(id) {
             state.materi = state.materi.filter(m => m.id !== id);
-            saveState();
+            await postToGAS("deleteMateri", { id: id });
             renderAdminMateriGrid();
             renderMateriGrid();
             showToast("Materi telah dihapus!");
         }
 
-        function openFormMateriModal() {
+        async function openFormMateriModal() {
             const title = prompt("Masukkan Judul Materi Baru:");
             if (!title) return;
-            const author = prompt("Masukkan Nama Pengarang/Instansi:", state.settings.namaKua);
+            const author = prompt("Masukkan Nama Pengarang/Instansi:", state.settings.namaKua || "KUA");
             
             const newM = {
                 id: 'M' + String(state.materi.length + 1).padStart(2, '0'),
@@ -2246,51 +2182,47 @@
             };
 
             state.materi.push(newM);
-            saveState();
+            await postToGAS("saveMateri", newM);
             renderAdminMateriGrid();
             renderMateriGrid();
             showToast("Materi baru berhasil ditambahkan!");
         }
 
         /* 4. SETTINGS HANDLERS */
-        function saveKuaSettings(e) {
+        async function saveKuaSettings(e) {
             e.preventDefault();
             state.settings.namaKua = document.getElementById('cfgNamaKua').value;
             state.settings.kepalaKua = document.getElementById('cfgKepalaKua').value;
             state.settings.nipKepala = document.getElementById('cfgNipKepala').value;
             state.settings.alamatKua = document.getElementById('cfgAlamatKua').value;
-            saveState();
+            await postToGAS("saveSettings", state.settings);
             renderHeaderKuaInfo();
             showToast("Profil KUA Berhasil Diperbarui!");
         }
 
-        function saveTemplateUndanganSettings(e) {
+        async function saveTemplateUndanganSettings(e) {
             e.preventDefault();
             state.settings.formatUndangan = document.getElementById('cfgFormatUndangan').value;
             state.settings.gdocUndangan = document.getElementById('cfgGdocUndangan').value;
-            saveState();
+            await postToGAS("saveSettings", state.settings);
             showToast("Pengaturan Template Undangan Disimpan!");
         }
 
-        function saveTemplateSertifikatSettings(e) {
+        async function saveTemplateSertifikatSettings(e) {
             e.preventDefault();
             state.settings.formatSertifikat = document.getElementById('cfgFormatSertifikat').value;
             state.settings.gdocSertifikat = document.getElementById('cfgGdocSertifikat').value;
-            saveState();
+            await postToGAS("saveSettings", state.settings);
             showToast("Pengaturan Template Sertifikat Disimpan!");
         }
 
-        function savePostTestSettings(e) {
+        async function savePostTestSettings(e) {
             e.preventDefault();
             state.settings.kkm = parseInt(document.getElementById('cfgKkm').value) || 75;
             state.settings.waktuTes = parseInt(document.getElementById('cfgWaktuTes').value) || 15;
-            saveState();
+            await postToGAS("saveSettings", state.settings);
             renderHeaderKuaInfo();
             showToast("Pengaturan KKM dan Waktu Tes Disimpan!");
-        }
-
-        function toggleGasModal() {
-            document.getElementById('gasModal').classList.toggle('hidden');
         }
     </script>
 </body>
