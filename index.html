@@ -17,7 +17,7 @@
 .btn2{@apply px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-40}
 .tab{@apply px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap}
 .bd{@apply px-2 py-0.5 rounded text-[10px] font-bold}
-th{@apply text-left text-xs font-bold text-slate-500 px-3 py-2 bg-slate-50}
+th{@apply text-left text-xs font-bold text-slate-500 px-3 py-2 bg-slate-50 sticky top-0 z-10}
 td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
 </style>
 </head>
@@ -27,15 +27,17 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
     <div class="w-10 h-10 shrink-0 rounded-xl bg-emerald-600 text-white flex items-center justify-center"><i class="fa-solid fa-hands-holding-child"></i></div>
     <div class="min-w-0"><h1 id="kua" class="font-bold leading-tight truncate">SIM-BIMWIN</h1><p class="text-xs text-slate-500 truncate">Sistem Bimbingan Perkawinan</p></div>
   </div>
+  <div class="flex items-center gap-2 shrink-0"><button id="rf" onclick="refreshData()" title="Muat ulang data" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600"><i class="fa-solid fa-rotate"></i></button>
   <div id="tg" class="bg-slate-100 p-1 rounded-xl flex text-xs shrink-0">
     <button id="rP" onclick="setRole('P')" class="tab">Peserta</button>
     <button id="rA" onclick="setRole('A')" class="tab hidden"><i class="fa-solid fa-user-shield mr-1"></i>Admin</button>
-  </div>
+  </div></div>
 </header>
 
 <main class="max-w-6xl mx-auto p-4">
+<div id="boot" class="text-center py-24 text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-2xl"></i></div>
 <section id="P">
-  <div id="auth" class="max-w-md mx-auto card mt-4">
+  <div id="auth" class="hidden max-w-md mx-auto card mt-4">
     <div class="text-center mb-4"><h2 id="aTitle" class="text-xl font-bold">Masuk Akun Catin</h2><p class="text-xs text-slate-500">Gunakan NIK calon pengantin pria atau wanita</p></div>
     <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl mb-4 text-sm">
       <button id="tL" onclick="setAuth('l')" class="tab">Masuk NIK</button><button id="tR" onclick="setAuth('r')" class="tab">Daftar Bimwin</button>
@@ -45,6 +47,7 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
       <button class="btn w-full">Masuk ke dashboard</button>
     </form>
     <form id="fR" onsubmit="doReg(event)" class="space-y-3 hidden"></form>
+    <div id="regRes" class="hidden"></div>
   </div>
   <div id="dash" class="hidden space-y-4"></div>
 </section>
@@ -57,27 +60,28 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
     <div id="gBtn" class="flex justify-center"></div>
   </div>
   <div id="adm" class="hidden">
+    <div id="admLoad" class="text-center py-6 text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-xl"></i></div>
     <div class="flex gap-2 overflow-x-auto pb-2">
       <button id="b_mon" onclick="atab('mon')" class="tab">Monitoring</button><button id="b_soal" onclick="atab('soal')" class="tab">Bank soal</button>
       <button id="b_mat" onclick="atab('mat')" class="tab">Materi</button><button id="b_set" onclick="atab('set')" class="tab">Pengaturan</button>
     </div>
     <div id="t_mon" class="space-y-3">
       <div class="card grid grid-cols-2 md:grid-cols-6 gap-2">
-        <select id="fA" class="inp" onchange="renderMon()"></select><select id="fB" class="inp" onchange="renderMon()"></select>
-        <select id="fS" class="inp" onchange="renderMon()"><option value="">Semua status tes</option><option value="0">Belum mengerjakan semua</option><option value="1">Lulus satu</option><option value="2">Lulus semua</option></select>
+        <select id="fA" class="inp" onchange="renderMon(1)"></select><select id="fB" class="inp" onchange="renderMon(1)"></select>
+        <select id="fS" class="inp" onchange="renderMon(1)"><option value="">Semua status tes</option><option value="0">Belum mengerjakan semua</option><option value="1">Lulus satu</option><option value="2">Lulus semua</option></select>
         <button class="btn2" onclick="resetMon()">Reset filter</button><button class="btn col-span-2" onclick="exp()"><i class="fa-solid fa-file-excel mr-1"></i>Export Excel</button>
       </div>
-      <div class="card p-0 overflow-x-auto"><table class="w-full min-w-[640px]"><thead><tr><th>Catin pria &amp; wanita</th><th>Tgl bimbingan</th><th>Status post test</th><th>Aksi</th></tr></thead><tbody id="monBody"></tbody></table></div>
+      <div class="card p-0 overflow-auto max-h-[62vh]"><table class="w-full min-w-[640px]"><thead><tr><th>Catin pria &amp; wanita</th><th>Tgl bimbingan</th><th>Status post test</th><th>Aksi</th></tr></thead><tbody id="monBody"></tbody></table></div><div id="monPg" class="flex justify-center items-center gap-2"></div>
     </div>
     <div id="t_soal" class="space-y-3 hidden">
       <div class="card grid grid-cols-2 md:grid-cols-5 gap-2">
-        <select id="sK" class="inp" onchange="renderSoal()"></select>
-        <select id="sJ" class="inp" onchange="renderSoal()"><option value="">Semua jenis</option><option>Pilihan Ganda Biasa</option><option>Pilihan Ganda Bertingkat</option></select>
-        <select id="sP" class="inp" onchange="renderSoal()"><option value="">Semua peruntukan</option><option>Pria Saja</option><option>Wanita Saja</option><option>Pria dan Wanita</option></select>
-        <select id="sS" class="inp" onchange="renderSoal()"><option value="">Semua status</option><option>Aktif</option><option>Nonaktif</option></select>
+        <select id="sK" class="inp" onchange="renderSoal(1)"></select>
+        <select id="sJ" class="inp" onchange="renderSoal(1)"><option value="">Semua jenis</option><option>Pilihan Ganda Biasa</option><option>Pilihan Ganda Bertingkat</option></select>
+        <select id="sP" class="inp" onchange="renderSoal(1)"><option value="">Semua peruntukan</option><option>Pria Saja</option><option>Wanita Saja</option><option>Pria dan Wanita</option></select>
+        <select id="sS" class="inp" onchange="renderSoal(1)"><option value="">Semua status</option><option>Aktif</option><option>Nonaktif</option></select>
         <button class="btn" onclick="formSoal()"><i class="fa-solid fa-plus mr-1"></i>Tambah soal</button>
       </div>
-      <div class="card p-0 overflow-x-auto"><table class="w-full min-w-[720px]"><thead><tr><th>ID</th><th>Pertanyaan</th><th>Kategori / jenis / peruntukan</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="soalBody"></tbody></table></div>
+      <div class="card p-0 overflow-auto max-h-[62vh]"><table class="w-full min-w-[720px]"><thead><tr><th>ID</th><th>Pertanyaan</th><th>Kategori / jenis / peruntukan</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="soalBody"></tbody></table></div><div id="soalPg" class="flex justify-center items-center gap-2"></div>
     </div>
     <div id="t_mat" class="space-y-3 hidden">
       <div class="card sticky top-[69px] z-20 grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -122,7 +126,7 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
 const GAS_URL='https://script.google.com/macros/s/AKfycbypbqFV8Uy_MGTo7SSunXrh7gOEtcwDTlhbm4vzDBBPZIDT-nhXg351yNQQX1bJFHzT5w/exec';
 const CLIENT_ID='892487021153-fvncd26atbtn6hqd24iqvd264n085lrt.apps.googleusercontent.com';
 /* ========================================= */
-const PH=['NAMA_PRIA','NIK_PRIA','WA_PRIA','ALAMAT_PRIA','NAMA_WANITA','NIK_WANITA','WA_WANITA','ALAMAT_WANITA','TGL_AKAD','TGL_BIMWIN','NOMOR_UNDANGAN','NOMOR_SERTIFIKAT','NILAI_PRIA','NILAI_WANITA','TGL_CETAK','NAMA_KUA','ALAMAT_KUA','NAMA_KEPALA','NIP_KEPALA','QR_CODE'];
+const PH=['NAMA_PRIA','NIK_PRIA','WA_PRIA','ALAMAT_PRIA','NAMA_WANITA','NIK_WANITA','WA_WANITA','ALAMAT_WANITA','TGL_AKAD','TGL_BIMWIN','NOMOR_UNDANGAN','NOMOR_SERTIFIKAT','NILAI_PRIA','NILAI_WANITA','TGL_CETAK','NAMA_KUA','ALAMAT_KUA','NAMA_KEPALA','NIP_KEPALA','BULAN_ROMAWI','QR_CODE'];
 const $=i=>document.getElementById(i);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fd=s=>s?new Date(s+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-';
@@ -134,7 +138,17 @@ async function api(action,data={},idToken){
   const j=await r.json(); if(!j.ok) throw new Error(j.error||'Terjadi kesalahan'); return j.data;
 }
 const adm=async(a,d)=>{try{return await api(a,d,S.tok)}catch(e){if(/admin|sesi/i.test(e.message))adminOut(false);throw e}};
-const run=async f=>{try{return await f()}catch(e){toast(e.message,1)}};
+let curBtn=null;
+addEventListener('click',e=>{curBtn=e.target.closest('button');setTimeout(()=>{curBtn=null},0)},true);
+function busy(b,on){
+  if(!b)return;
+  if(on){if(b.dataset.h!==undefined)return;b.dataset.h=b.innerHTML;b.style.minWidth=b.offsetWidth+'px';b.disabled=true;
+    b.innerHTML='<i class="fa-solid fa-circle-notch fa-spin mr-1"></i>'+b.innerHTML.replace(/<i [^>]*><\/i>\s*/g,'')}
+  else if(b.dataset.h!==undefined){b.innerHTML=b.dataset.h;delete b.dataset.h;b.style.minWidth='';b.disabled=false}
+}
+const run=async f=>{const b=curBtn;busy(b,1);try{return await f()}catch(e){toast(e.message,1)}finally{busy(b,0)}};
+function setUser(u){S.u=u;try{sessionStorage.setItem('bw_uv',JSON.stringify(u));sessionStorage.setItem('bw_u',u.me.nik)}catch(e){}}
+async function loadInfo(){S.info=await api('info');try{localStorage.setItem('bw_info',JSON.stringify(S.info))}catch(e){}$('kua').textContent=S.info.s.namaKua;fillBim()}
 function toast(m,e){const d=document.createElement('div');d.className='px-4 py-2 rounded-xl text-white text-xs font-semibold shadow-lg '+(e?'bg-rose-600':'bg-emerald-600');d.textContent=m;$('toasts').append(d);setTimeout(()=>d.remove(),3800)}
 const b64=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:'application/pdf'})};
 const pv=u=>{const m=/\/file\/d\/([^/]+)/.exec(u||'');return m?`https://drive.google.com/file/d/${m[1]}/preview`:u};
@@ -165,6 +179,13 @@ function adminOut(idle){
   setRole('A');if(idle)toast('Sesi admin berakhir: tidak ada aktivitas selama 5 menit',1)}
 const jwtExp=t=>{try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp}catch(e){return 0}};
 
+/* ---------- muat ulang data (tanpa hard refresh) ---------- */
+const refreshData=()=>run(async()=>{
+  await loadInfo();
+  if(!$('A').classList.contains('hidden')&&S.tok)await loadAdmin();
+  else if(S.u){setUser(await api('login',{nik:S.u.me.nik}));dash()}
+  toast('Data diperbarui')});
+
 /* ---------- sesi, idle 5 menit, boot ---------- */
 const IDLE=5*60*1000;let act=Date.now();
 function touch(){act=Date.now();try{sessionStorage.setItem('bw_t',act)}catch(e){}}
@@ -175,16 +196,24 @@ async function boot(){
   const q=new URLSearchParams(location.search);
   if(q.get('v'))return showVerify(q.get('v'));
   S.showA=localStorage.getItem('bw_adm')=='1'||q.has('admin');
-  setAuth('l');buildReg();setRole('P');
-  await run(async()=>{S.info=await api('info');$('kua').textContent=S.info.s.namaKua;fillBim()});
-  const fresh=Date.now()-Number(sessionStorage.getItem('bw_t')||0)<IDLE,at=sessionStorage.getItem('bw_a'),nk=sessionStorage.getItem('bw_u');
-  if(fresh&&at&&jwtExp(at)>Date.now()/1000+60){S.tok=at;touch();setRole('A');run(loadAdmin);return}
-  if(fresh&&nk){try{S.u=await api('login',{nik:nk});touch();dash();return}catch(e){sessionStorage.removeItem('bw_u')}}
-  if(q.has('admin'))setRole('A');
-  gis();
+  setAuth('l');buildReg();
+  try{S.info=JSON.parse(localStorage.getItem('bw_info'))||S.info}catch(e){}
+  if(S.info.s.namaKua)$('kua').textContent=S.info.s.namaKua;
+  const fresh=Date.now()-Number(sessionStorage.getItem('bw_t')||0)<IDLE,at=sessionStorage.getItem('bw_a'),uv=sessionStorage.getItem('bw_uv');
+  $('boot').remove();
+  if(fresh&&at&&jwtExp(at)>Date.now()/1000+60){S.tok=at;touch();setRole('A');run(loadAdmin);run(loadInfo);return}
+  if(fresh&&uv&&S.info.s.kkm!==undefined){
+    try{S.u=JSON.parse(uv);touch();setRole('P');dash();
+      run(async()=>{const a=JSON.stringify(S.info);await loadInfo();const nu=await api('login',{nik:S.u.me.nik});
+        if(JSON.stringify(nu)!==JSON.stringify(S.u)||a!==JSON.stringify(S.info)){setUser(nu);dash()}});
+      return}
+    catch(e){S.u=null;sessionStorage.removeItem('bw_uv')}
+  }
+  $('auth').classList.remove('hidden');setRole(q.has('admin')?'A':'P');
+  run(loadInfo);gis();
 }
 async function showVerify(k){
-  ['tg','P','A'].forEach(i=>$(i).classList.add('hidden'));$('V').classList.remove('hidden');
+  ['tg','rf','P','A'].forEach(i=>$(i).classList.add('hidden'));if($('boot'))$('boot').remove();$('V').classList.remove('hidden');
   try{const r=await api('verifikasi',{kode:k});
     if(r.namaKua)$('kua').textContent=r.namaKua;
     $('vBox').innerHTML=r.valid?`<div class="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl"><i class="fa-solid fa-check"></i></div>
@@ -197,10 +226,10 @@ async function showVerify(k){
 }
 
 /* ---------- init ---------- */
-window.onload=boot;
+document.addEventListener('DOMContentLoaded',boot);
 
 /* ---------- peserta: auth ---------- */
-function setAuth(m){const l=m=='l';$('fL').classList.toggle('hidden',!l);$('fR').classList.toggle('hidden',l);
+function setAuth(m){const l=m=='l';$('fL').classList.toggle('hidden',!l);$('fR').classList.toggle('hidden',l);$('regRes').classList.add('hidden');if(!l&&S.regDone){buildReg();fillBim();S.regDone=0}
   $('tL').className='tab '+(l?'bg-white shadow-sm text-emerald-700':'text-slate-500');$('tR').className='tab '+(!l?'bg-white shadow-sm text-emerald-700':'text-slate-500');
   $('aTitle').textContent=l?'Masuk Akun Catin':'Pendaftaran Bimwin'}
 function buildReg(){
@@ -212,12 +241,16 @@ function buildReg(){
   <div><label class="text-xs font-semibold">Tanggal Bimwin (sebelum akad)</label><select id="rBim" class="inp" required></select></div><button class="btn w-full">Daftar Bimwin</button>`}
 function fillBim(){const a=$('rAkad')?.value,j=S.info.s.jadwal.filter(d=>a&&d<a);
   if($('rBim'))$('rBim').innerHTML=`<option value="">${a?(j.length?'Pilih tanggal':'Tidak ada jadwal sebelum akad'):'Isi tanggal akad dulu'}</option>`+j.map(d=>`<option value="${d}">${fd(d)}</option>`).join('')}
-const doLogin=e=>{e.preventDefault();run(async()=>{const nik=$('lNik').value.trim();S.u=await api('login',{nik});sessionStorage.setItem('bw_u',nik);touch();dash();toast('Berhasil masuk')})};
+const doLogin=e=>{e.preventDefault();run(async()=>{const nik=$('lNik').value.trim();setUser(await api('login',{nik}));touch();dash();toast('Berhasil masuk')})};
 const doReg=e=>{e.preventDefault();run(async()=>{
   const g=i=>$(i).value.trim();
-  await api('register',{namaPria:g('rNamaP'),nikPria:g('rNikP'),waPria:g('rWaP'),alamatPria:g('rAlP'),namaWanita:g('rNamaW'),nikWanita:g('rNikW'),waWanita:g('rWaW'),alamatWanita:g('rAlW'),tglAkad:g('rAkad'),tglBimwin:g('rBim')});
-  toast('Pendaftaran berhasil. Silakan masuk dengan NIK.');$('lNik').value=g('rNikP');setAuth('l')})};
-function logout(){S.u=null;sessionStorage.removeItem('bw_u');$('dash').classList.add('hidden');$('auth').classList.remove('hidden');$('lNik').value=''}
+  const r=await api('register',{namaPria:g('rNamaP'),nikPria:g('rNikP'),waPria:g('rWaP'),alamatPria:g('rAlP'),namaWanita:g('rNamaW'),nikWanita:g('rNikW'),waWanita:g('rWaW'),alamatWanita:g('rAlW'),tglAkad:g('rAkad'),tglBimwin:g('rBim')});
+  regDone(r.status,g('rNikP'))})};
+function regDone(st,nik){
+  S.regDone=1;$('fR').classList.add('hidden');const ok=st=='created';
+  $('regRes').innerHTML=`<div class="rounded-2xl p-4 text-sm text-center space-y-3 border ${ok?'bg-emerald-50 border-emerald-200 text-emerald-800':'bg-amber-50 border-amber-200 text-amber-800'}"><i class="fa-solid ${ok?'fa-circle-check':'fa-circle-info'} text-3xl"></i><p class="font-semibold">${ok?'Berhasil membuat akun, silahkan untuk login dengan NIK masing-masing calon pengantin.':'Anda sudah memiliki akun, silahkan login dengan menggunakan NIK masing-masing calon pengantin.'}</p><button class="btn" onclick="setAuth('l')">Ke halaman login</button></div>`;
+  $('regRes').classList.remove('hidden');$('lNik').value=nik}
+function logout(){S.u=null;sessionStorage.removeItem('bw_u');sessionStorage.removeItem('bw_uv');$('dash').classList.add('hidden');$('auth').classList.remove('hidden');$('lNik').value=''}
 
 /* ---------- peserta: dashboard ---------- */
 function dash(){
@@ -226,13 +259,13 @@ function dash(){
   const lbl=!t.done?'Kerjakan post test':!t.pass?'Kerjakan ulang':t.score<100?'Tingkatkan nilai':'Nilai sempurna';
   $('auth').classList.add('hidden');$('dash').classList.remove('hidden');
   $('dash').innerHTML=`
-  ${c.hadir?'':`<div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm"><i class="fa-solid fa-bell text-amber-600 mr-2"></i>Jadwal bimbingan dan pemeriksaan luring Anda: <b>${fd(c.tglBimwin)}</b></div>`}
+  ${c.hadir?'':`<div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm"><i class="fa-solid fa-bell text-amber-600 mr-2"></i>Jadwal bimbingan dan pemeriksaan luring Anda: <b>${fd(c.tglBimwin)}, pukul 10.00 WIB</b></div>`}
   <div class="rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-5 flex flex-wrap justify-between gap-3 items-center">
     <div><p class="text-xs opacity-80">Masuk sebagai catin ${c.g=='P'?'pria':'wanita'}</p><h2 class="text-xl font-bold">${esc(c.namaPria)} &amp; ${esc(c.namaWanita)}</h2><p class="text-xs opacity-90">Akad: ${fd(c.tglAkad)}</p></div>
     <button class="btn2" onclick="logout()"><i class="fa-solid fa-right-from-bracket mr-1"></i>Keluar</button></div>
   <div class="grid md:grid-cols-3 gap-4">
     <div class="card space-y-1 text-sm"><h3 class="font-bold mb-2">Profil saya</h3><p><b>${esc(c.me.nama)}</b></p><p class="text-slate-500">NIK ${esc(c.me.nik)}</p><p>WA ${esc(c.me.wa)}</p><p>${esc(c.me.alamat)}</p><p class="text-xs text-slate-500 pt-1">Pasangan: ${esc(c.g=='P'?c.namaWanita:c.namaPria)}</p></div>
-    <div class="card space-y-2"><h3 class="font-bold">Status bimbingan luring</h3>${c.hadir?'<span class="bd bg-emerald-100 text-emerald-700 text-xs">Sudah mengikuti bimbingan &amp; pemeriksaan luring</span>':'<span class="bd bg-amber-100 text-amber-700 text-xs">Belum bimbingan luring</span>'}<p class="text-xs text-slate-500">Jadwal: ${fd(c.tglBimwin)}</p></div>
+    <div class="card space-y-2"><h3 class="font-bold">Status bimbingan luring</h3>${c.hadir?'<span class="bd bg-emerald-100 text-emerald-700 text-xs">Sudah mengikuti bimbingan &amp; pemeriksaan luring</span>':'<span class="bd bg-amber-100 text-amber-700 text-xs">Belum bimbingan luring</span>'}<p class="text-xs text-slate-500">Jadwal: ${fd(c.tglBimwin)} · 10.00 WIB</p></div>
     <div class="card space-y-2"><button class="btn w-full" onclick="dl('undangan')"><i class="fa-solid fa-file-arrow-down mr-1"></i>Unduh undangan Bimwin</button><button class="btn2 w-full py-2.5" onclick="editProfil()"><i class="fa-solid fa-pen mr-1"></i>Edit profil &amp; tanggal Bimwin</button></div>
   </div>
   <div class="card"><h3 class="font-bold mb-3">Post test</h3>
@@ -254,8 +287,13 @@ function renderMateri(p){
 function prev(id){const m=[...S.info.materi,...(S.ad?S.ad.materi:[])].find(x=>x.id==id);$('vTitle').textContent=m.judul;$('vFrame').src=pv(m.pdfUrl);$('viewer').classList.replace('hidden','flex')}
 function closeV(){$('vFrame').src='';$('viewer').classList.replace('flex','hidden')}
 const dl=j=>run(async()=>{toast('Menyiapkan dokumen...');const d=await api('dokumen',{nik:S.u.me.nik,jenis:j});const a=document.createElement('a');a.href=URL.createObjectURL(b64(d.b64));a.download=d.filename;a.click()});
-function editProfil(){const c=S.u,j=S.info.s.jadwal.filter(d=>d<c.tglAkad||d==c.tglBimwin).map(d=>[d,fd(d)]);
-  form('Edit profil & tanggal Bimwin',[['nama','Nama'],['wa','No. WhatsApp','tel'],['alamat','Alamat'],['tglBimwin','Tanggal Bimwin','select',j]],{nama:c.me.nama,wa:c.me.wa,alamat:c.me.alamat,tglBimwin:c.tglBimwin},async o=>{S.u=await api('updateProfil',{...o,nik:c.me.nik});dash();closeM();toast('Profil diperbarui')})}
+const bimOpts=(ak,cur)=>[...new Set([...S.info.s.jadwal,cur])].filter(d=>d&&ak&&d<ak).sort().map(d=>[d,fd(d)]);
+function editProfil(){const c=S.u;
+  form('Edit profil, tanggal akad & tanggal Bimwin',[['nama','Nama'],['wa','No. WhatsApp','tel'],['alamat','Alamat'],['tglAkad','Tanggal akad nikah','date'],['tglBimwin','Tanggal Bimwin (sebelum akad)','select',bimOpts(c.tglAkad,c.tglBimwin)]],
+    {nama:c.me.nama,wa:c.me.wa,alamat:c.me.alamat,tglAkad:c.tglAkad,tglBimwin:c.tglBimwin},
+    async o=>{setUser(await api('updateProfil',{...o,nik:c.me.nik}));dash();closeM();toast('Profil diperbarui')});
+  $('f_tglAkad').onchange=()=>{const cur=$('f_tglBimwin').value;
+    $('f_tglBimwin').innerHTML='<option value="">Pilih tanggal</option>'+bimOpts($('f_tglAkad').value,cur).map(([v,l])=>`<option value="${v}" ${v==cur?'selected':''}>${l}</option>`).join('')}}
 
 /* ---------- peserta: post test ---------- */
 const startExam=()=>run(async()=>{
@@ -269,9 +307,9 @@ function qShow(){const x=S.ex,q=x.q[x.i];$('exNo').textContent=`Soal ${x.i+1} da
 function pick(k){S.ex.a[S.ex.q[S.ex.i].id]=k;qShow()}
 function nav(d){S.ex.i+=d;qShow()}
 async function sendExam(){
-  const x=S.ex;if(x.sent)return;x.sent=1;clearInterval(x.tm);
-  try{const r=await api('submitTes',{nik:S.u.me.nik,jawaban:x.a});S.u=r.c;toast(`Nilai tes ini: ${r.last}`,r.last<S.info.s.kkm)}catch(e){toast(e.message,1)}
-  window.onbeforeunload=null;S.ex=null;touch();$('exam').classList.replace('flex','hidden');dash()}
+  const x=S.ex;if(x.sent)return;x.sent=1;clearInterval(x.tm);busy($('exSend'),1);
+  try{const r=await api('submitTes',{nik:S.u.me.nik,jawaban:x.a});setUser(r.c);toast(`Nilai tes ini: ${r.last}`,r.last<S.info.s.kkm)}catch(e){toast(e.message,1)}
+  window.onbeforeunload=null;S.ex=null;busy($('exSend'),0);touch();$('exam').classList.replace('flex','hidden');dash()}
 
 /* ---------- modal generik ---------- */
 function closeM(){$('modal').classList.replace('flex','hidden')}
@@ -286,32 +324,53 @@ function form(t,fs,v,save,ro){
 async function loadAdmin(){S.ad=await adm('adminData');const a=S.ad;
   fillSel('fA',a.couples.map(c=>c.tglAkad),'Semua tanggal akad',fd);fillSel('fB',a.couples.map(c=>c.tglBimwin),'Semua tanggal bimbingan',fd);
   fillSel('sK',a.soal.map(s=>s.kategori),'Semua kategori');fillSel('ak',a.materi.map(m=>m.kategori),'Semua kategori');
-  renderMon();renderSoal();renderAMat(1);renderSet();if(!window.__t)atab('mon')}
+  renderMon();renderSoal();renderAMat(1);renderSet();$('admLoad').classList.add('hidden');if(!window.__t)atab('mon')}
 function fillSel(id,v,all,f=x=>x){const e=$(id),cur=e.value;e.innerHTML=`<option value="">${all}</option>`+[...new Set(v)].filter(Boolean).sort().map(x=>`<option value="${esc(x)}">${esc(f(x))}</option>`).join('');e.value=cur}
 function atab(t){window.__t=t;['mon','soal','mat','set'].forEach(x=>{$('t_'+x).classList.toggle('hidden',x!=t);$('b_'+x).className='tab '+(x==t?'bg-indigo-600 text-white':'text-slate-600 bg-white')})}
 const monList=()=>S.ad.couples.filter(c=>(!$('fA').value||c.tglAkad==$('fA').value)&&(!$('fB').value||c.tglBimwin==$('fB').value)&&($('fS').value===''||st(c)==$('fS').value));
-function renderMon(){$('monBody').innerHTML=monList().map(c=>{const s=st(c);
+function renderMon(p){const L=monList(),n=Math.max(1,Math.ceil(L.length/10));S.mnp=Math.min(p||S.mnp||1,n);$('monBody').innerHTML=L.slice((S.mnp-1)*10,S.mnp*10).map(c=>{const s=st(c);
   return `<tr><td><b>${esc(c.namaPria)} &amp; ${esc(c.namaWanita)}</b><br><span class="text-[10px] text-slate-400">${c.id}</span></td><td>${fd(c.tglBimwin)}</td>
   <td><span class="bd ${['bg-slate-200 text-slate-600','bg-amber-100 text-amber-700','bg-emerald-100 text-emerald-700'][s]}">${['Belum lulus','Lulus satu','Lulus semua'][s]}</span></td>
-  <td class="whitespace-nowrap"><label class="mr-2 text-xs"><input type="checkbox" ${c.hadir?'checked':''} onchange="hadir('${c.id}',this.checked)"> Hadir luring</label><button class="btn2" onclick="detail('${c.id}')">Detail</button></td></tr>`}).join('')||'<tr><td colspan="4" class="text-slate-400">Tidak ada data.</td></tr>'}
-function resetMon(){['fA','fB','fS'].forEach(i=>$(i).value='');renderMon()}
-const hadir=(id,v)=>run(async()=>{await adm('setHadir',{id,val:v});S.ad.couples.find(c=>c.id==id).hadir=v;toast(v?'Kehadiran dikonfirmasi':'Konfirmasi dibatalkan')});
+  <td class="whitespace-nowrap"><label class="mr-2 text-xs"><input type="checkbox" ${c.hadir?'checked':''} onchange="hadir('${c.id}',this.checked)"> Hadir luring</label><button class="btn2" onclick="detail('${c.id}')">Detail</button></td></tr>`}).join('')||'<tr><td colspan="4" class="text-slate-400">Tidak ada data.</td></tr>';$('monPg').innerHTML=pager(S.mnp,n,'renderMon')}
+function resetMon(){['fA','fB','fS'].forEach(i=>$(i).value='');renderMon(1)}
+const hadir=(id,v)=>{const cb=event.target;cb.disabled=true;run(async()=>{try{await adm('setHadir',{id,val:v});S.ad.couples.find(c=>c.id==id).hadir=v;toast(v?'Kehadiran dikonfirmasi':'Konfirmasi dibatalkan')}catch(e){cb.checked=!v;throw e}finally{cb.disabled=false}})};
 function detail(id){const c=S.ad.couples.find(x=>x.id==id),col=(t,k,cl)=>{const T=k=='P'?c.tesP:c.tesW,N=k=='P'?'Pria':'Wanita';return `<div class="rounded-xl p-3 ${cl} text-sm space-y-1"><b>Catin ${N}</b><p>${esc(c['nama'+N])}</p><p>NIK ${esc(c['nik'+N])}</p><p>WA ${esc(c['wa'+N])}</p><p>${esc(c['alamat'+N])}</p><p>Post test: <b>${T.score}</b> (${T.pass?'Lulus':'Belum lulus'})</p></div>`};
   showM('Detail peserta '+c.id,`<div class="grid md:grid-cols-2 gap-3">${col(0,'P','bg-blue-50')}${col(0,'W','bg-rose-50')}</div><p class="text-xs text-slate-500">Bimwin ${fd(c.tglBimwin)} · Akad ${fd(c.tglAkad)}</p>
   <div class="flex flex-wrap gap-2"><button class="btn2" onclick="openDoc('${c.id}','undangan')"><i class="fa-solid fa-file-pdf mr-1"></i>Lihat surat undangan</button><button class="btn2" ${st(c)==2?'':'disabled'} onclick="openDoc('${c.id}','sertifikat')"><i class="fa-solid fa-certificate mr-1"></i>Lihat sertifikat</button></div>`);$('mSave').classList.add('hidden')}
-async function openDoc(id,j){const w=window.open('','_blank');try{const d=await adm('dokumenAdmin',{id,jenis:j});w.location=URL.createObjectURL(b64(d.b64))}catch(e){w.close();toast(e.message,1)}}
+async function openDoc(id,j){const b=curBtn,w=window.open('','_blank');busy(b,1);try{const d=await adm('dokumenAdmin',{id,jenis:j});w.location=URL.createObjectURL(b64(d.b64))}catch(e){w.close();toast(e.message,1)}finally{busy(b,0)}}
 function exp(){const r=monList().map(c=>({ID:c.id,'Nama Pria':c.namaPria,'NIK Pria':c.nikPria,'WA Pria':c.waPria,'Nama Wanita':c.namaWanita,'NIK Wanita':c.nikWanita,'WA Wanita':c.waWanita,'Tgl Akad':c.tglAkad,'Tgl Bimwin':c.tglBimwin,'Hadir luring':c.hadir?'Ya':'Belum','Nilai Pria':c.tesP.score,'Nilai Wanita':c.tesW.score,Status:['Belum lulus','Lulus satu','Lulus semua'][st(c)]}));
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(r),'Peserta');XLSX.writeFile(wb,'Peserta_Bimwin.xlsx')}
 
 /* bank soal */
-const SF=[['kategori','Kategori / tema (mis. Fikih)'],['jenis','Jenis soal','select',['Pilihan Ganda Biasa','Pilihan Ganda Bertingkat']],['peruntukan','Peruntukan','select',['Pria Saja','Wanita Saja','Pria dan Wanita']],['pembuat','Pembuat soal'],['teks','Pertanyaan','textarea'],['optA','Pilihan A'],['optB','Pilihan B'],['optC','Pilihan C'],['optD','Pilihan D'],['kunci','Kunci jawaban','select',['A','B','C','D']],['skor','Skor tiap pilihan A,B,C,D (hanya bertingkat, mis. 100,50,0,0)']];
-function renderSoal(){const f=i=>$(i).value;
-  $('soalBody').innerHTML=S.ad.soal.filter(s=>(!f('sK')||s.kategori==f('sK'))&&(!f('sJ')||s.jenis==f('sJ'))&&(!f('sP')||s.peruntukan==f('sP'))&&(!f('sS')||s.status==f('sS'))).map(s=>
+function renderSoal(p){const f=i=>$(i).value;
+  const L=S.ad.soal.filter(s=>(!f('sK')||s.kategori==f('sK'))&&(!f('sJ')||s.jenis==f('sJ'))&&(!f('sP')||s.peruntukan==f('sP'))&&(!f('sS')||s.status==f('sS')));const n=Math.max(1,Math.ceil(L.length/10));S.snp=Math.min(p||S.snp||1,n);
+  $('soalBody').innerHTML=L.slice((S.snp-1)*10,S.snp*10).map(s=>
   `<tr><td class="font-mono text-xs">${s.id}</td><td class="max-w-xs">${esc(s.teks)}</td><td><b class="text-indigo-600">${esc(s.kategori)}</b><br><span class="text-[10px] text-slate-500">${esc(s.jenis)} · ${esc(s.peruntukan)}</span></td>
   <td><span class="bd ${s.status=='Aktif'?'bg-emerald-100 text-emerald-700':'bg-slate-200 text-slate-600'}">${s.status}</span></td>
-  <td class="whitespace-nowrap space-x-1"><button class="btn2" onclick="formSoal('${s.id}',1)">Lihat</button><button class="btn2" onclick="formSoal('${s.id}')">Edit</button><button class="btn2" onclick="togSoal('${s.id}')">${s.status=='Aktif'?'Nonaktifkan':'Aktifkan'}</button><button class="btn2 text-rose-600" onclick="delSoal('${s.id}')">Hapus</button></td></tr>`).join('')||'<tr><td colspan="5" class="text-slate-400">Belum ada soal.</td></tr>'}
-function formSoal(id,ro){const s=S.ad.soal.find(x=>x.id==id)||{jenis:'Pilihan Ganda Biasa',peruntukan:'Pria dan Wanita',kunci:'A',pembuat:S.ad.settings.namaKua};
-  form(id?(ro?'Lihat soal ':'Edit soal ')+id:'Tambah soal',SF,s,async o=>{await adm('saveSoal',o);await loadAdmin();closeM();toast('Soal disimpan')},ro)}
+  <td class="whitespace-nowrap space-x-1"><button class="btn2" onclick="formSoal('${s.id}',1)">Lihat</button><button class="btn2" onclick="formSoal('${s.id}')">Edit</button><button class="btn2" onclick="togSoal('${s.id}')">${s.status=='Aktif'?'Nonaktifkan':'Aktifkan'}</button><button class="btn2 text-rose-600" onclick="delSoal('${s.id}')">Hapus</button></td></tr>`).join('')||'<tr><td colspan="5" class="text-slate-400">Belum ada soal.</td></tr>';$('soalPg').innerHTML=pager(S.snp,n,'renderSoal')}
+const JN=['Pilihan Ganda Biasa','Pilihan Ganda Bertingkat'],PN=['Pria Saja','Wanita Saja','Pria dan Wanita'];
+function formSoal(id,ro){
+  const s=S.ad.soal.find(x=>x.id==id)||{jenis:JN[0],peruntukan:PN[2],kunci:'A',pembuat:S.ad.settings.namaKua,skor:''};
+  const sk=String(s.skor||'').split(','),d=ro?'disabled':'';
+  const sel=(k,l,o)=>`<div><label class="text-xs font-semibold">${l}</label><select id="f_${k}" class="inp" ${d}>${o.map(x=>`<option ${x==s[k]?'selected':''}>${x}</option>`).join('')}</select></div>`;
+  const txt=(k,l)=>`<div><label class="text-xs font-semibold">${l}</label><input id="f_${k}" class="inp" value="${esc(s[k])}" ${d}></div>`;
+  showM((id?(ro?'Lihat soal ':'Edit soal '):'Tambah soal')+(id||''),
+    txt('kategori','Kategori / tema (mis. Fikih)')+sel('jenis','Jenis soal',JN)+sel('peruntukan','Peruntukan',PN)+txt('pembuat','Pembuat soal')+
+    `<div><label class="text-xs font-semibold">Pertanyaan</label><textarea id="f_teks" rows="3" class="inp" ${d}>${esc(s.teks)}</textarea></div>
+    <div><div class="flex justify-between text-xs font-semibold"><span>Pilihan jawaban</span><span id="hOpt" class="text-slate-500 font-normal"></span></div><div class="space-y-2 mt-1">`+
+    ['A','B','C','D'].map((k,i)=>`<div class="flex items-center gap-2"><b class="w-5">${k}</b><input id="f_opt${k}" class="inp flex-1" value="${esc(s['opt'+k])}" ${d}><label class="kk flex items-center gap-1 text-xs whitespace-nowrap"><input type="radio" name="kunci" value="${k}" ${s.kunci==k?'checked':''} ${d}>Kunci</label><input id="f_sk${k}" type="number" min="0" max="100" placeholder="Nilai" class="inp sk w-24" value="${esc(sk[i]??'')}" ${d}></div>`).join('')+'</div></div>');
+  const sync=()=>{const b=$('f_jenis').value==JN[1];
+    document.querySelectorAll('.kk').forEach(e=>e.classList.toggle('hidden',b));document.querySelectorAll('.sk').forEach(e=>e.classList.toggle('hidden',!b));
+    $('hOpt').textContent=b?'Isi nilai 0–100 di samping setiap pilihan':'Pilih satu kunci jawaban'};
+  $('f_jenis').onchange=sync;sync();
+  $('mSave').classList.toggle('hidden',!!ro);
+  $('mSave').onclick=()=>run(async()=>{
+    const v=k=>$('f_'+k).value.trim(),b=v('jenis')==JN[1];
+    const o={...s,kategori:v('kategori'),jenis:v('jenis'),peruntukan:v('peruntukan'),pembuat:v('pembuat'),teks:v('teks'),optA:v('optA'),optB:v('optB'),optC:v('optC'),optD:v('optD')};
+    if(!o.kategori||!o.teks||!o.optA||!o.optB||!o.optC||!o.optD)throw new Error('Kategori, pertanyaan, dan keempat pilihan wajib diisi');
+    if(b){const a=['A','B','C','D'].map(k=>v('sk'+k));if(a.some(x=>x===''||isNaN(x)||x<0||x>100))throw new Error('Nilai tiap pilihan harus berupa angka 0–100');o.skor=a.join(',');o.kunci=''}
+    else{const r=document.querySelector('input[name=kunci]:checked');if(!r)throw new Error('Pilih kunci jawaban');o.kunci=r.value;o.skor=''}
+    await adm('saveSoal',o);await loadAdmin();closeM();toast('Soal disimpan')})}
 const togSoal=id=>run(async()=>{const s={...S.ad.soal.find(x=>x.id==id)};s.status=s.status=='Aktif'?'Nonaktif':'Aktif';await adm('saveSoal',s);await loadAdmin()});
 const delSoal=id=>confirm('Hapus soal ini?')&&run(async()=>{await adm('delSoal',{id});await loadAdmin();toast('Soal dihapus')});
 
@@ -333,8 +392,8 @@ function renderSet(){const s=S.ad.settings;
   ${cardS('Profil instansi',[['namaKua','Nama KUA'],['alamatKua','Alamat KUA'],['kepalaKua','Nama kepala'],['nipKepala','NIP kepala']])}
   <div class="card space-y-3"><h3 class="font-bold">Jadwal Bimwin yang tersedia</h3><div class="flex gap-2"><input id="newJ" type="date" class="inp"><button class="btn" onclick="addJ()">Tambah</button></div>
     <div class="flex flex-wrap gap-2">${(s.jadwal||[]).slice().sort().map(d=>`<span class="bd bg-emerald-50 text-emerald-700 text-xs">${fd(d)} <button onclick="delJ('${d}')" class="ml-1 text-rose-500">×</button></span>`).join('')||'<span class="text-xs text-slate-400">Belum ada jadwal.</span>'}</div></div>
-  ${cardS('Template undangan',[['formatUndangan','Format nomor ({COUNTER} {YEAR} {MONTH})'],['counterUndangan','Counter berikutnya','number'],['tplUndangan','ID Google Docs / Slides template']])}
-  ${cardS('Template sertifikat',[['formatSertifikat','Format nomor ({COUNTER} {YEAR} {MONTH})'],['counterSertifikat','Counter berikutnya','number'],['tplSertifikat','ID Google Docs / Slides template'],['urlAplikasi','URL aplikasi untuk QR verifikasi']])}
+  ${cardS('Template undangan',[['formatUndangan','Format nomor ({COUNTER} {YEAR} {MONTH} {BULAN_ROMAWI})'],['counterUndangan','Counter berikutnya','number'],['tplUndangan','ID Google Docs / Slides template']])}
+  ${cardS('Template sertifikat',[['formatSertifikat','Format nomor ({COUNTER} {YEAR} {MONTH} {BULAN_ROMAWI})'],['counterSertifikat','Counter berikutnya','number'],['tplSertifikat','ID Google Docs / Slides template'],['urlAplikasi','URL aplikasi untuk QR verifikasi']])}
   ${cardS('Post test',[['kkm','KKM','number'],['waktuTes','Waktu mengerjakan (menit)','number']])}
   <div class="card space-y-2"><h3 class="font-bold">Placeholder untuk template</h3><p class="text-xs text-slate-500">Tulis persis di dokumen/slide, termasuk kurung kurawal. Counter undangan dan sertifikat berjalan terpisah. Untuk QR sertifikat, letakkan {QR_CODE} sendirian di satu kotak/paragraf pada template.</p><div class="flex flex-wrap gap-1">${PH.map(p=>`<code class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[11px]">{${p}}</code>`).join('')}</div></div></div>`}
 const saveSet=ks=>run(async()=>{const o={};ks.split(',').forEach(k=>{const v=$('s_'+k).value;o[k]=['kkm','waktuTes','counterUndangan','counterSertifikat'].includes(k)?Number(v):v.trim()});
