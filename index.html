@@ -28,8 +28,8 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
     <div class="min-w-0"><h1 id="kua" class="font-bold leading-tight truncate">SIM-BIMWIN</h1><p class="text-xs text-slate-500 truncate">Sistem Bimbingan Perkawinan</p></div>
   </div>
   <div class="bg-slate-100 p-1 rounded-xl flex text-xs shrink-0">
-    <button id="rP" onclick="role('P')" class="tab">Peserta</button>
-    <button id="rA" onclick="role('A')" class="tab"><i class="fa-solid fa-user-shield mr-1"></i>Admin</button>
+    <button id="rP" onclick="setRole('P')" class="tab">Peserta</button>
+    <button id="rA" onclick="setRole('A')" class="tab"><i class="fa-solid fa-user-shield mr-1"></i>Admin</button>
   </div>
 </header>
 
@@ -132,7 +132,7 @@ async function api(action,data={},idToken){
   const r=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,data,idToken})});
   const j=await r.json(); if(!j.ok) throw new Error(j.error||'Terjadi kesalahan'); return j.data;
 }
-const adm=async(a,d)=>{try{return await api(a,d,S.tok)}catch(e){if(/admin|sesi/i.test(e.message)){S.tok=null;role('A')}throw e}};
+const adm=async(a,d)=>{try{return await api(a,d,S.tok)}catch(e){if(/admin|sesi/i.test(e.message)){S.tok=null;setRole('A')}throw e}};
 const run=async f=>{try{return await f()}catch(e){toast(e.message,1)}};
 function toast(m,e){const d=document.createElement('div');d.className='px-4 py-2 rounded-xl text-white text-xs font-semibold shadow-lg '+(e?'bg-rose-600':'bg-emerald-600');d.textContent=m;$('toasts').append(d);setTimeout(()=>d.remove(),3800)}
 const b64=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:'application/pdf'})};
@@ -140,14 +140,14 @@ const pv=u=>{const m=/\/file\/d\/([^/]+)/.exec(u||'');return m?`https://drive.go
 const pager=(p,n,fn)=>`<button class="btn2" ${p<=1?'disabled':''} onclick="${fn}(${p-1})">Sebelumnya</button><span class="text-xs">Hal ${p} / ${n}</span><button class="btn2" ${p>=n?'disabled':''} onclick="${fn}(${p+1})">Berikutnya</button>`;
 
 /* ---------- role & admin auth ---------- */
-function role(r){
+function setRole(r){
   $('P').classList.toggle('hidden',r!='P');$('A').classList.toggle('hidden',r!='A');
   $('rP').className='tab '+(r=='P'?'bg-white shadow-sm':'text-slate-500');$('rA').className='tab '+(r=='A'?'bg-white shadow-sm text-indigo-700':'text-slate-500');
   if(r=='A'){$('gate').classList.toggle('hidden',!!S.tok);$('adm').classList.toggle('hidden',!S.tok);
     if(!S.tok){gis();const g=$('gBtn');
       if(CLIENT_ID.startsWith('GANTI'))g.innerHTML='<p class="text-xs text-rose-600">CLIENT_ID belum diisi di index.html</p>';
       else if(gisReady){g.innerHTML='';google.accounts.id.renderButton(g,{theme:'outline',size:'large'})}
-      else{g.innerHTML='<p class="text-xs text-slate-500">Memuat Google Sign-In... klik Admin lagi dalam beberapa detik. Jika tetap gagal, matikan ad-blocker.</p>';setTimeout(()=>{if(!S.tok&&!$('A').classList.contains('hidden'))role('A')},2500)}}}
+      else{g.innerHTML='<p class="text-xs text-slate-500">Memuat Google Sign-In... klik Admin lagi dalam beberapa detik. Jika tetap gagal, matikan ad-blocker.</p>';setTimeout(()=>{if(!S.tok&&!$('A').classList.contains('hidden'))setRole('A')},2500)}}}
 }
 let gisReady=0;
 function gis(){
@@ -156,12 +156,12 @@ function gis(){
   if(localStorage.getItem('bw_adm'))google.accounts.id.prompt(); // hanya untuk browser yang pernah login admin
 }
 async function onCred(r){
-  try{await api('adminLogin',{},r.credential);S.tok=r.credential;localStorage.setItem('bw_adm','1');role('A');await loadAdmin()}
+  try{await api('adminLogin',{},r.credential);S.tok=r.credential;localStorage.setItem('bw_adm','1');setRole('A');await loadAdmin()}
   catch(e){toast('Akun Google ini bukan admin KUA',1)}
 }
 
 /* ---------- init ---------- */
-window.onload=()=>{gis();role('P');setAuth('l');buildReg();run(async()=>{S.info=await api('info');$('kua').textContent=S.info.s.namaKua;fillBim()})};
+window.onload=()=>{gis();setRole('P');setAuth('l');buildReg();run(async()=>{S.info=await api('info');$('kua').textContent=S.info.s.namaKua;fillBim()})};
 
 /* ---------- peserta: auth ---------- */
 function setAuth(m){const l=m=='l';$('fL').classList.toggle('hidden',!l);$('fR').classList.toggle('hidden',l);
