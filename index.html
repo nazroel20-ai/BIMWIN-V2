@@ -27,9 +27,9 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
     <div class="w-10 h-10 shrink-0 rounded-xl bg-emerald-600 text-white flex items-center justify-center"><i class="fa-solid fa-hands-holding-child"></i></div>
     <div class="min-w-0"><h1 id="kua" class="font-bold leading-tight truncate">SIM-BIMWIN</h1><p class="text-xs text-slate-500 truncate">Sistem Bimbingan Perkawinan</p></div>
   </div>
-  <div class="bg-slate-100 p-1 rounded-xl flex text-xs shrink-0">
+  <div id="tg" class="bg-slate-100 p-1 rounded-xl flex text-xs shrink-0">
     <button id="rP" onclick="setRole('P')" class="tab">Peserta</button>
-    <button id="rA" onclick="setRole('A')" class="tab"><i class="fa-solid fa-user-shield mr-1"></i>Admin</button>
+    <button id="rA" onclick="setRole('A')" class="tab hidden"><i class="fa-solid fa-user-shield mr-1"></i>Admin</button>
   </div>
 </header>
 
@@ -89,6 +89,7 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
     <div id="t_set" class="hidden"></div>
   </div>
 </section>
+<section id="V" class="hidden"><div id="vBox" class="max-w-md mx-auto card mt-8 text-center space-y-3"><p class="text-sm text-slate-500">Memeriksa sertifikat...</p></div></section>
 </main>
 
 <div id="modal" class="fixed inset-0 z-50 bg-slate-900/60 hidden items-center justify-center p-3">
@@ -121,18 +122,18 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
 const GAS_URL='https://script.google.com/macros/s/AKfycbypbqFV8Uy_MGTo7SSunXrh7gOEtcwDTlhbm4vzDBBPZIDT-nhXg351yNQQX1bJFHzT5w/exec';
 const CLIENT_ID='892487021153-fvncd26atbtn6hqd24iqvd264n085lrt.apps.googleusercontent.com';
 /* ========================================= */
-const PH=['NAMA_PRIA','NIK_PRIA','WA_PRIA','ALAMAT_PRIA','NAMA_WANITA','NIK_WANITA','WA_WANITA','ALAMAT_WANITA','TGL_AKAD','TGL_BIMWIN','NOMOR_UNDANGAN','NOMOR_SERTIFIKAT','NILAI_PRIA','NILAI_WANITA','TGL_CETAK','NAMA_KUA','ALAMAT_KUA','NAMA_KEPALA','NIP_KEPALA'];
+const PH=['NAMA_PRIA','NIK_PRIA','WA_PRIA','ALAMAT_PRIA','NAMA_WANITA','NIK_WANITA','WA_WANITA','ALAMAT_WANITA','TGL_AKAD','TGL_BIMWIN','NOMOR_UNDANGAN','NOMOR_SERTIFIKAT','NILAI_PRIA','NILAI_WANITA','TGL_CETAK','NAMA_KUA','ALAMAT_KUA','NAMA_KEPALA','NIP_KEPALA','QR_CODE'];
 const $=i=>document.getElementById(i);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fd=s=>s?new Date(s+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-';
-const S={info:{s:{jadwal:[]},materi:[]},u:null,tok:null,ad:null,mp:1,amp:1,ex:null};
+const S={info:{s:{jadwal:[]},materi:[]},u:null,tok:null,showA:false,ad:null,mp:1,amp:1,ex:null};
 const st=c=>c.tesP.pass&&c.tesW.pass?2:(c.tesP.pass||c.tesW.pass)?1:0;
 
 async function api(action,data={},idToken){
   const r=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,data,idToken})});
   const j=await r.json(); if(!j.ok) throw new Error(j.error||'Terjadi kesalahan'); return j.data;
 }
-const adm=async(a,d)=>{try{return await api(a,d,S.tok)}catch(e){if(/admin|sesi/i.test(e.message)){S.tok=null;setRole('A')}throw e}};
+const adm=async(a,d)=>{try{return await api(a,d,S.tok)}catch(e){if(/admin|sesi/i.test(e.message))adminOut(false);throw e}};
 const run=async f=>{try{return await f()}catch(e){toast(e.message,1)}};
 function toast(m,e){const d=document.createElement('div');d.className='px-4 py-2 rounded-xl text-white text-xs font-semibold shadow-lg '+(e?'bg-rose-600':'bg-emerald-600');d.textContent=m;$('toasts').append(d);setTimeout(()=>d.remove(),3800)}
 const b64=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:'application/pdf'})};
@@ -142,7 +143,7 @@ const pager=(p,n,fn)=>`<button class="btn2" ${p<=1?'disabled':''} onclick="${fn}
 /* ---------- role & admin auth ---------- */
 function setRole(r){
   $('P').classList.toggle('hidden',r!='P');$('A').classList.toggle('hidden',r!='A');
-  $('rP').className='tab '+(r=='P'?'bg-white shadow-sm':'text-slate-500');$('rA').className='tab '+(r=='A'?'bg-white shadow-sm text-indigo-700':'text-slate-500');
+  $('rP').className='tab '+(r=='P'?'bg-white shadow-sm':'text-slate-500');$('rA').className='tab '+(r=='A'?'bg-white shadow-sm text-indigo-700':'text-slate-500')+(S.showA?'':' hidden');
   if(r=='A'){$('gate').classList.toggle('hidden',!!S.tok);$('adm').classList.toggle('hidden',!S.tok);
     if(!S.tok){gis();const g=$('gBtn');
       if(CLIENT_ID.startsWith('GANTI'))g.innerHTML='<p class="text-xs text-rose-600">CLIENT_ID belum diisi di index.html</p>';
@@ -153,15 +154,50 @@ let gisReady=0;
 function gis(){
   if(gisReady||!window.google||!google.accounts||CLIENT_ID.startsWith('GANTI'))return;
   google.accounts.id.initialize({client_id:CLIENT_ID,auto_select:true,callback:onCred});gisReady=1;
-  if(localStorage.getItem('bw_adm'))google.accounts.id.prompt(); // hanya untuk browser yang pernah login admin
+  if(localStorage.getItem('bw_adm')&&!S.tok)google.accounts.id.prompt(); // hanya untuk browser yang pernah login admin
 }
 async function onCred(r){
-  try{await api('adminLogin',{},r.credential);S.tok=r.credential;localStorage.setItem('bw_adm','1');setRole('A');await loadAdmin()}
-  catch(e){toast('Akun Google ini bukan admin KUA',1)}
+  try{await api('adminLogin',{},r.credential);S.tok=r.credential;sessionStorage.setItem('bw_a',r.credential);localStorage.setItem('bw_adm','1');S.showA=true;touch();setRole('A');await loadAdmin()}
+  catch(e){toast(e.message,1);if(!S.tok&&/admin/i.test(e.message)){localStorage.removeItem('bw_adm');S.showA=false;setRole('P')}}
+}
+function adminOut(idle){
+  S.tok=null;S.ad=null;sessionStorage.removeItem('bw_a');try{google.accounts.id.disableAutoSelect()}catch(e){}
+  setRole('A');if(idle)toast('Sesi admin berakhir: tidak ada aktivitas selama 5 menit',1)}
+const jwtExp=t=>{try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp}catch(e){return 0}};
+
+/* ---------- sesi, idle 5 menit, boot ---------- */
+const IDLE=5*60*1000;let act=Date.now();
+function touch(){act=Date.now();try{sessionStorage.setItem('bw_t',act)}catch(e){}}
+['click','keydown','touchstart','scroll','mousemove'].forEach(ev=>addEventListener(ev,()=>{if(Date.now()-act>1500)touch()},{passive:true}));
+setInterval(()=>{if(S.ex||Date.now()-act<IDLE)return;
+  if(S.u){logout();toast('Sesi berakhir: tidak ada aktivitas selama 5 menit',1)}else if(S.tok)adminOut(true)},15000);
+async function boot(){
+  const q=new URLSearchParams(location.search);
+  if(q.get('v'))return showVerify(q.get('v'));
+  S.showA=localStorage.getItem('bw_adm')=='1'||q.has('admin');
+  setAuth('l');buildReg();setRole('P');
+  await run(async()=>{S.info=await api('info');$('kua').textContent=S.info.s.namaKua;fillBim()});
+  const fresh=Date.now()-Number(sessionStorage.getItem('bw_t')||0)<IDLE,at=sessionStorage.getItem('bw_a'),nk=sessionStorage.getItem('bw_u');
+  if(fresh&&at&&jwtExp(at)>Date.now()/1000+60){S.tok=at;touch();setRole('A');run(loadAdmin);return}
+  if(fresh&&nk){try{S.u=await api('login',{nik:nk});touch();dash();return}catch(e){sessionStorage.removeItem('bw_u')}}
+  if(q.has('admin'))setRole('A');
+  gis();
+}
+async function showVerify(k){
+  ['tg','P','A'].forEach(i=>$(i).classList.add('hidden'));$('V').classList.remove('hidden');
+  try{const r=await api('verifikasi',{kode:k});
+    if(r.namaKua)$('kua').textContent=r.namaKua;
+    $('vBox').innerHTML=r.valid?`<div class="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl"><i class="fa-solid fa-check"></i></div>
+      <h2 class="text-xl font-bold text-emerald-700">Sertifikat valid</h2>
+      <p class="text-sm text-slate-600">Pasangan calon pengantin berikut telah mengikuti Bimbingan Perkawinan dan dinyatakan lulus.</p>
+      <div class="rounded-xl bg-slate-50 p-4 text-sm space-y-1"><p class="font-bold">${esc(r.namaPria)}</p><p class="text-slate-400">&amp;</p><p class="font-bold">${esc(r.namaWanita)}</p>
+      <p class="pt-2 text-xs text-slate-500">Tanggal bimbingan: ${fd(r.tglBimwin)}</p><p class="text-xs text-slate-500">No. sertifikat: ${esc(r.noSertifikat)}</p><p class="text-xs text-slate-500">Penyelenggara: ${esc(r.namaKua)}</p></div>`
+    :`<div class="w-16 h-16 mx-auto rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-3xl"><i class="fa-solid fa-xmark"></i></div><h2 class="text-xl font-bold text-rose-700">Sertifikat tidak ditemukan</h2><p class="text-sm text-slate-600">Kode verifikasi tidak valid atau sertifikat belum diterbitkan.</p>`;
+  }catch(e){$('vBox').innerHTML='<p class="text-sm text-rose-600">Gagal memeriksa: '+esc(e.message)+'</p>'}
 }
 
 /* ---------- init ---------- */
-window.onload=()=>{gis();setRole('P');setAuth('l');buildReg();run(async()=>{S.info=await api('info');$('kua').textContent=S.info.s.namaKua;fillBim()})};
+window.onload=boot;
 
 /* ---------- peserta: auth ---------- */
 function setAuth(m){const l=m=='l';$('fL').classList.toggle('hidden',!l);$('fR').classList.toggle('hidden',l);
@@ -176,12 +212,12 @@ function buildReg(){
   <div><label class="text-xs font-semibold">Tanggal Bimwin (sebelum akad)</label><select id="rBim" class="inp" required></select></div><button class="btn w-full">Daftar Bimwin</button>`}
 function fillBim(){const a=$('rAkad')?.value,j=S.info.s.jadwal.filter(d=>a&&d<a);
   if($('rBim'))$('rBim').innerHTML=`<option value="">${a?(j.length?'Pilih tanggal':'Tidak ada jadwal sebelum akad'):'Isi tanggal akad dulu'}</option>`+j.map(d=>`<option value="${d}">${fd(d)}</option>`).join('')}
-const doLogin=e=>{e.preventDefault();run(async()=>{S.u=await api('login',{nik:$('lNik').value.trim()});dash();toast('Berhasil masuk')})};
+const doLogin=e=>{e.preventDefault();run(async()=>{const nik=$('lNik').value.trim();S.u=await api('login',{nik});sessionStorage.setItem('bw_u',nik);touch();dash();toast('Berhasil masuk')})};
 const doReg=e=>{e.preventDefault();run(async()=>{
   const g=i=>$(i).value.trim();
   await api('register',{namaPria:g('rNamaP'),nikPria:g('rNikP'),waPria:g('rWaP'),alamatPria:g('rAlP'),namaWanita:g('rNamaW'),nikWanita:g('rNikW'),waWanita:g('rWaW'),alamatWanita:g('rAlW'),tglAkad:g('rAkad'),tglBimwin:g('rBim')});
   toast('Pendaftaran berhasil. Silakan masuk dengan NIK.');$('lNik').value=g('rNikP');setAuth('l')})};
-function logout(){S.u=null;$('dash').classList.add('hidden');$('auth').classList.remove('hidden');$('lNik').value=''}
+function logout(){S.u=null;sessionStorage.removeItem('bw_u');$('dash').classList.add('hidden');$('auth').classList.remove('hidden');$('lNik').value=''}
 
 /* ---------- peserta: dashboard ---------- */
 function dash(){
@@ -235,7 +271,7 @@ function nav(d){S.ex.i+=d;qShow()}
 async function sendExam(){
   const x=S.ex;if(x.sent)return;x.sent=1;clearInterval(x.tm);
   try{const r=await api('submitTes',{nik:S.u.me.nik,jawaban:x.a});S.u=r.c;toast(`Nilai tes ini: ${r.last}`,r.last<S.info.s.kkm)}catch(e){toast(e.message,1)}
-  window.onbeforeunload=null;$('exam').classList.replace('flex','hidden');dash()}
+  window.onbeforeunload=null;S.ex=null;touch();$('exam').classList.replace('flex','hidden');dash()}
 
 /* ---------- modal generik ---------- */
 function closeM(){$('modal').classList.replace('flex','hidden')}
@@ -298,9 +334,9 @@ function renderSet(){const s=S.ad.settings;
   <div class="card space-y-3"><h3 class="font-bold">Jadwal Bimwin yang tersedia</h3><div class="flex gap-2"><input id="newJ" type="date" class="inp"><button class="btn" onclick="addJ()">Tambah</button></div>
     <div class="flex flex-wrap gap-2">${(s.jadwal||[]).slice().sort().map(d=>`<span class="bd bg-emerald-50 text-emerald-700 text-xs">${fd(d)} <button onclick="delJ('${d}')" class="ml-1 text-rose-500">×</button></span>`).join('')||'<span class="text-xs text-slate-400">Belum ada jadwal.</span>'}</div></div>
   ${cardS('Template undangan',[['formatUndangan','Format nomor ({COUNTER} {YEAR} {MONTH})'],['counterUndangan','Counter berikutnya','number'],['tplUndangan','ID Google Docs / Slides template']])}
-  ${cardS('Template sertifikat',[['formatSertifikat','Format nomor ({COUNTER} {YEAR} {MONTH})'],['counterSertifikat','Counter berikutnya','number'],['tplSertifikat','ID Google Docs / Slides template']])}
+  ${cardS('Template sertifikat',[['formatSertifikat','Format nomor ({COUNTER} {YEAR} {MONTH})'],['counterSertifikat','Counter berikutnya','number'],['tplSertifikat','ID Google Docs / Slides template'],['urlAplikasi','URL aplikasi untuk QR verifikasi']])}
   ${cardS('Post test',[['kkm','KKM','number'],['waktuTes','Waktu mengerjakan (menit)','number']])}
-  <div class="card space-y-2"><h3 class="font-bold">Placeholder untuk template</h3><p class="text-xs text-slate-500">Tulis persis di dokumen/slide, termasuk kurung kurawal. Counter undangan dan sertifikat berjalan terpisah.</p><div class="flex flex-wrap gap-1">${PH.map(p=>`<code class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[11px]">{${p}}</code>`).join('')}</div></div></div>`}
+  <div class="card space-y-2"><h3 class="font-bold">Placeholder untuk template</h3><p class="text-xs text-slate-500">Tulis persis di dokumen/slide, termasuk kurung kurawal. Counter undangan dan sertifikat berjalan terpisah. Untuk QR sertifikat, letakkan {QR_CODE} sendirian di satu kotak/paragraf pada template.</p><div class="flex flex-wrap gap-1">${PH.map(p=>`<code class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[11px]">{${p}}</code>`).join('')}</div></div></div>`}
 const saveSet=ks=>run(async()=>{const o={};ks.split(',').forEach(k=>{const v=$('s_'+k).value;o[k]=['kkm','waktuTes','counterUndangan','counterSertifikat'].includes(k)?Number(v):v.trim()});
   S.ad.settings=await adm('saveSettings',o);S.info.s.namaKua=S.ad.settings.namaKua;$('kua').textContent=S.ad.settings.namaKua;renderSet();toast('Pengaturan disimpan')});
 const setJ=j=>run(async()=>{S.ad.settings=await adm('saveSettings',{jadwal:j});renderSet()});
