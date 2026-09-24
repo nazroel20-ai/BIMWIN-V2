@@ -918,7 +918,7 @@
     <!-- APPLICATION JAVASCRIPT LOGIC                                             -->
     <!-- ========================================================================= -->
     <script>
-        let GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbypbqFV8Uy_MGTo7SSunXrh7gOEtcwDTlhbm4vzDBBPZIDT-nhXg351yNQQX1bJFHzT5w/exec"; // Masukkan URL Google Apps Script Web App di sini jika terhubung
+        let GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbypbqFV8Uy_MGTo7SSunXrh7gOEtcwDTlhbm4vzDBBPZIDT-nhXg351yNQQX1bJFHzT5w/exec"; // Masukkan URL Google Apps Script Web App di sini
 
         // Inisialisasi State Aplikasi
         let state = {
@@ -1152,7 +1152,7 @@
         };
 
         /* -------------------------------------------------------------------------
-         * ROLE SWITCHING & AUTOMATIC ADMIN VERIFICATION (NO MANUAL FORM)
+         * ROLE SWITCHING & POPUP GOOGLE ACCOUNT VERIFICATION
          * ------------------------------------------------------------------------- */
         function switchRole(newRole) {
             state.role = newRole;
@@ -1175,36 +1175,43 @@
             }
         }
 
-        async function requestAdminAccess() {
+        function requestAdminAccess() {
             if (state.isAdminAuthenticated) {
                 switchRole('admin');
                 return;
             }
 
-            if (GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("...")) {
-                showSyncLoader(true);
-                try {
-                    // Strictly check browser active Google email session via Apps Script
-                    const res = await fetch(`${GAS_WEB_APP_URL}?action=verifyAdmin`);
-                    const json = await res.json();
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("...")) {
+                showToast("Akses ditolak! URL Apps Script backend belum dikonfigurasi.", "error");
+                return;
+            }
 
-                    if (json && json.success) {
+            showToast("Membuka jendela verifikasi akun Google...", "warning");
+
+            // Buka popup langsung ke domain script.google.com agar cookie Google dibaca
+            const authUrl = `${GAS_WEB_APP_URL}?action=authPopup`;
+            const popup = window.open(authUrl, "VerifikasiAdminKUA", "width=480,height=520,top=100,left=100");
+
+            if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                showToast("Pop-up diblokir browser! Harap izinkan pop-up untuk situs ini.", "error");
+                return;
+            }
+
+            // Dengarkan balasan message dari jendela popup
+            const messageHandler = function(event) {
+                if (event.data && event.data.type === 'ADMIN_AUTH_RESULT') {
+                    window.removeEventListener('message', messageHandler);
+                    if (event.data.success) {
                         state.isAdminAuthenticated = true;
                         switchRole('admin');
-                        showToast(`Akses Admin Otomatis Diterima! (${json.activeEmail})`, "success");
-                        return;
+                        showToast(`Akses Admin Diterima! (${event.data.email})`, "success");
                     } else {
-                        showToast("Akses ditolak! Anda tidak memiliki hak akses sebagai Admin KUA.", "error");
+                        showToast(`Akses ditolak! Email ${event.data.email ? '(' + event.data.email + ')' : ''} tidak terdaftar sebagai Admin KUA.`, "error");
                     }
-                } catch (err) {
-                    console.warn("GAS Admin Session Check Error:", err);
-                    showToast("Gagal memverifikasi akun Admin dengan server Apps Script.", "error");
-                } finally {
-                    showSyncLoader(false);
                 }
-            } else {
-                showToast("Akses ditolak! URL Apps Script backend belum dikonfigurasi.", "error");
-            }
+            };
+
+            window.addEventListener('message', messageHandler);
         }
 
         /* -------------------------------------------------------------------------
