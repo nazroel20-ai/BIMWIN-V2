@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Bimbingan Perkawinan (Bimwin) - KUA</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for Export Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- html2pdf for generating PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        kua: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        brand: {
+                            purple: '#6366f1',
+                            indigo: '#4f46e5',
+                            accent: '#0EA5E9',
+                            softBg: '#F8FAFC',
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                        'card': '0 10px 30px -5px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 20px rgba(79, 70, 229, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #F1F5F9;
+            color: #334155;
+            min-height: 100vh;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+        .ratio-3-4 {
+            aspect-ratio: 3 / 4;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+        .gradient-card-1 {
+            background: linear-gradient(135deg, #6366F1 0%, #a855f7 100%);
+        }
+        .gradient-card-2 {
+            background: linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%);
+        }
+        .gradient-card-3 {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        }
+        .gradient-card-4 {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-indigo selection:text-white">
+
+    <!-- Top Bar -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-xl shadow-md">
+                    <i class="fa-solid fa-hands-holding-child"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-lg leading-tight" id="headerKuaName">KUA Kecamatan Smart</h1>
+                    <p class="text-xs text-slate-500 font-medium">Sistem Bimbingan Perkawinan (SIM-BIMWIN)</p>
+                </div>
+            </div>
+
+            <!-- Global Action Controls -->
+            <div class="flex items-center space-x-2">
+                <!-- Gas Status Indicator -->
+                <button onclick="toggleGasModal()" class="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200 hover:bg-emerald-100 transition">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span>AppsScript Online</span>
+                </button>
+
+                <!-- Current Role Tag & Switcher -->
+                <div class="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+                    <button id="btnRolePeserta" onclick="switchRole('peserta')" class="px-3 py-1.5 rounded-lg transition-all shadow-sm bg-white text-slate-800">
+                        <i class="fa-solid fa-user-heart mr-1 text-rose-500"></i> Peserta
+                    </button>
+                    <button id="btnRoleAdmin" onclick="switchRole('admin')" class="px-3 py-1.5 rounded-lg transition-all text-slate-500 hover:text-slate-800">
+                        <i class="fa-solid fa-user-shield mr-1 text-indigo-600"></i> Admin KUA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-6">
+
+        <!-- Toast / Alert Container -->
+        <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2"></div>
+
+        <!-- ========================================================================= -->
+        <!-- MODE PESERTA SECTION                                                      -->
+        <!-- ========================================================================= -->
+        <section id="pesertaSection" class="block space-y-6">
+
+            <!-- 1. PESERTA AUTH (LOGIN / REGISTER) CONTAINER -->
+            <div id="pesertaAuthBox" class="max-w-md mx-auto py-8">
+                <!-- Tab Switching Login vs Register -->
+                <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl font-bold shadow-inner">
+                            <i class="fa-solid fa-rings-wedding"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-800" id="authTitle">Masuk Akun Catin</h2>
+                        <p class="text-xs text-slate-500 mt-1">Gunakan NIK Calon Pengantin Pria atau Wanita</p>
+                    </div>
+
+                    <!-- Auth Mode Tabs -->
+                    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-6 text-xs font-semibold">
+                        <button id="tabAuthLogin" onclick="setAuthMode('login')" class="py-2.5 rounded-lg bg-white shadow-sm text-emerald-700">Masuk NIK</button>
+                        <button id="tabAuthRegister" onclick="setAuthMode('register')" class="py-2.5 rounded-lg text-slate-500 hover:text-slate-800">Daftar Bimwin</button>
+                    </div>
+
+                    <!-- LOGIN FORM -->
+                    <form id="formLoginPeserta" onsubmit="handleLoginPeserta(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">NIK Calon Pengantin (Pria/Wanita)</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                    <i class="fa-solid fa-id-card"></i>
+                                </span>
+                                <input type="number" id="loginNik" placeholder="Masukkan 16 Digit NIK" required class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-600/30 hover:shadow-xl hover:from-emerald-700 hover:to-teal-700 transition duration-200">
+                            Masuk ke Dashboard
+                        </button>
+                    </form>
+
+                    <!-- REGISTER FORM -->
+                    <form id="formRegisterPeserta" onsubmit="handleRegisterPeserta(event)" class="space-y-4 hidden">
+                        <div class="border-b pb-2 mb-3">
+                            <span class="text-xs font-bold uppercase text-emerald-600 tracking-wider"><i class="fa-solid fa-mars mr-1"></i> Data Catin Pria</span>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Pria</label>
+                            <input type="text" id="regNamaPria" required placeholder="Sesuai KTP" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">NIK Pria</label>
+                                <input type="number" id="regNikPria" required placeholder="16 Digit" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">No WA Pria</label>
+                                <input type="tel" id="regWaPria" required placeholder="08xxx" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Pria</label>
+                            <textarea id="regAlamatPria" rows="1" required placeholder="Alamat lengkap" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white"></textarea>
+                        </div>
+
+                        <div class="border-b pb-2 mb-3 pt-2">
+                            <span class="text-xs font-bold uppercase text-rose-600 tracking-wider"><i class="fa-solid fa-venus mr-1"></i> Data Catin Wanita</span>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Wanita</label>
+                            <input type="text" id="regNamaWanita" required placeholder="Sesuai KTP" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">NIK Wanita</label>
+                                <input type="number" id="regNikWanita" required placeholder="16 Digit" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">No WA Wanita</label>
+                                <input type="tel" id="regWaWanita" required placeholder="08xxx" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Wanita</label>
+                            <textarea id="regAlamatWanita" rows="1" required placeholder="Alamat lengkap" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white"></textarea>
+                        </div>
+
+                        <div class="border-b pb-2 mb-3 pt-2">
+                            <span class="text-xs font-bold uppercase text-indigo-600 tracking-wider"><i class="fa-solid fa-calendar-days mr-1"></i> Jadwal Pernikahan & Bimwin</span>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Akad Nikah</label>
+                            <input type="date" id="regTglAkad" required onchange="updateBimwinDateOptions()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Bimwin Offline (Disediakan KUA)</label>
+                            <select id="regTglBimwin" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white">
+                                <option value="">-- Pilih Tanggal Bimwin --</option>
+                            </select>
+                            <p class="text-[10px] text-slate-400 mt-0.5">*Tanggal harus sebelum tanggal akad nikah.</p>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-600/20 hover:from-emerald-700 hover:to-teal-700 transition duration-200">
+                            Daftar Akun Bimwin
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. PESERTA DASHBOARD CONTAINER -->
+            <div id="pesertaDashboardBox" class="hidden space-y-6">
+
+                <!-- User Welcome Banner & Logout -->
+                <div class="bg-gradient-to-r from-emerald-800 via-teal-700 to-emerald-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl">
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+                        <div>
+                            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-emerald-200 text-xs font-semibold mb-2">
+                                <i class="fa-solid fa-user-check"></i>
+                                <span id="loggedAsRole">Catin Pria Login</span>
+                            </div>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight" id="welcomeCoupleName">Siti & Ahmad</h2>
+                            <p class="text-emerald-100 text-xs sm:text-sm mt-1" id="welcomeScheduleText">Jadwal Bimwin Offline: 20 Oktober 2026</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="openEditProfileModal()" class="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-xs font-semibold rounded-xl transition border border-white/20 flex items-center">
+                                <i class="fa-solid fa-pen-to-square mr-2"></i> Edit Profil Saya
+                            </button>
+                            <button onclick="logoutPeserta()" class="px-4 py-2 bg-rose-500/80 hover:bg-rose-600 text-white text-xs font-semibold rounded-xl transition flex items-center shadow-md">
+                                <i class="fa-solid fa-right-from-bracket mr-2"></i> Keluar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reminder Alert Box (Hidden when offline attendance confirmed) -->
+                <div id="reminderAlertBox" class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-2xl shadow-sm flex items-start space-x-3">
+                    <div class="text-amber-500 text-xl pt-0.5">
+                        <i class="fa-solid fa-bell animate-bounce"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-amber-900 text-sm">Pengingat Jadwal Bimbingan & Pemeriksaan Offline</h4>
+                        <p class="text-xs text-amber-800 mt-0.5" id="reminderTextDetail">
+                            Anda dijadwalkan hadir luring pada tanggal <span class="font-bold" id="remindBimwinDate">-</span> di Aula Kantor KUA. Harap membawa dokumen asli dan bukti undangan.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Main Grid: Info + Post-Test Box -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- Left Column: Profile Card & Actions -->
+                    <div class="space-y-6">
+                        <!-- Profile Active Card -->
+                        <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
+                            <div class="flex items-center justify-between border-b pb-4 mb-4">
+                                <h3 class="font-bold text-slate-800 text-sm flex items-center">
+                                    <i class="fa-solid fa-id-card-clip text-emerald-600 mr-2"></i> Data Profil Catin Active
+                                </h3>
+                                <span id="badgeGender" class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-blue-100 text-blue-700">Pria</span>
+                            </div>
+
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <span class="text-slate-400 block font-medium">Nama Lengkap:</span>
+                                    <span class="font-bold text-slate-700 text-sm" id="profNama">-</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block font-medium">NIK:</span>
+                                    <span class="font-semibold text-slate-700" id="profNik">-</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block font-medium">Nomor WhatsApp:</span>
+                                    <span class="font-semibold text-slate-700" id="profWa">-</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block font-medium">Alamat:</span>
+                                    <span class="font-semibold text-slate-700" id="profAlamat">-</span>
+                                </div>
+                                <div class="pt-2 border-t">
+                                    <span class="text-slate-400 block font-medium">Pasangan Pernikahan:</span>
+                                    <span class="font-bold text-slate-800" id="profPasangan">-</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 pt-4 border-t space-y-2">
+                                <button onclick="downloadUndanganBimwin()" class="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs rounded-xl transition border border-indigo-200 flex items-center justify-center">
+                                    <i class="fa-solid fa-file-pdf mr-2 text-indigo-600"></i> Unduh Undangan Bimwin
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Offline Attendance Status Badge -->
+                        <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100 flex items-center space-x-4">
+                            <div id="statusOfflineIcon" class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid fa-user-xmark"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-400 block font-semibold">Status Kehadiran Luring</span>
+                                <h4 id="statusOfflineText" class="font-bold text-slate-700 text-sm">Belum Bimbingan Offline</h4>
+                                <p class="text-[11px] text-slate-400 mt-0.5" id="statusOfflineSub font-normal">Dikonfirmasi oleh Admin KUA setelah tatap muka.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Post Test Box -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100 h-full flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between border-b pb-4 mb-4">
+                                    <div>
+                                        <h3 class="font-bold text-slate-800 text-base flex items-center">
+                                            <i class="fa-solid fa-graduation-cap text-indigo-600 mr-2"></i> Status Post-Test Bimwin
+                                        </h3>
+                                        <p class="text-xs text-slate-400 mt-0.5">Syarat kelulusan untuk mendapatkan sertifikat resmi Bimwin.</p>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600 border border-indigo-100" id="kkmInfoLabel">
+                                        KKM: 75
+                                    </span>
+                                </div>
+
+                                <!-- CONDITION 1: LOCKED (BEFORE OFFLINE ATTENDANCE) -->
+                                <div id="postTestLockedBox" class="py-12 px-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center">
+                                    <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3 text-2xl">
+                                        <i class="fa-solid fa-lock"></i>
+                                    </div>
+                                    <h4 class="font-bold text-slate-700 text-base">Post-Test Belum Terbuka</h4>
+                                    <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                                        Post test terbuka setelah mengikuti bimbingan dan pemeriksaan secara luring yang dikonfirmasi oleh Admin KUA.
+                                    </p>
+                                </div>
+
+                                <!-- CONDITION 2: UNLOCKED (AFTER OFFLINE ATTENDANCE) -->
+                                <div id="postTestUnlockedBox" class="hidden space-y-4">
+                                    <!-- Couple Score Cards -->
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <!-- Catin Pria Test Info -->
+                                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <span class="text-xs font-bold text-blue-700 flex items-center"><i class="fa-solid fa-mars mr-1"></i> Catin Pria</span>
+                                                <span id="badgeStatusPostPria" class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-200 text-slate-600">Belum Tes</span>
+                                            </div>
+                                            <div class="flex items-baseline space-x-1">
+                                                <span class="text-2xl font-extrabold text-slate-800" id="scorePriaText">0</span>
+                                                <span class="text-xs text-slate-400">/ 100</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Catin Wanita Test Info -->
+                                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <span class="text-xs font-bold text-rose-700 flex items-center"><i class="fa-solid fa-venus mr-1"></i> Catin Wanita</span>
+                                                <span id="badgeStatusPostWanita" class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-200 text-slate-600">Belum Tes</span>
+                                            </div>
+                                            <div class="flex items-baseline space-x-1">
+                                                <span class="text-2xl font-extrabold text-slate-800" id="scoreWanitaText">0</span>
+                                                <span class="text-xs text-slate-400">/ 100</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Info Text -->
+                                    <div class="p-3 bg-blue-50 rounded-xl border border-blue-100 text-xs text-blue-800 flex items-center space-x-2">
+                                        <i class="fa-solid fa-circle-info text-blue-600 text-base shrink-0"></i>
+                                        <span>Kedua calon pengantin harus mengerjakan post-test dan lulus KKM agar tombol Sertifikat dapat diunduh.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Buttons Bar -->
+                            <div id="postTestButtonsBar" class="hidden pt-6 mt-6 border-t flex flex-wrap gap-3">
+                                <button id="btnStartPostTest" onclick="startPostTest()" class="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xs rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center">
+                                    <i class="fa-solid fa-pen-ruler mr-2"></i> Kerjakan Post Test
+                                </button>
+
+                                <button id="btnDownloadSertifikat" onclick="downloadSertifikatBimwin()" disabled class="py-3 px-5 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-md hover:bg-emerald-700 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center">
+                                    <i class="fa-solid fa-award mr-2"></i> Unduh Sertifikat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. MATERI BOX (GRID 3x4 CARDS + FILTERS + STICKY HEADER) -->
+                <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+                    <!-- Sticky Header -->
+                    <div class="sticky top-[61px] z-20 bg-white/95 backdrop-blur-md px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base flex items-center">
+                                <i class="fa-solid fa-book-open text-emerald-600 mr-2"></i> Modul & Materi Bimbingan
+                            </h3>
+                            <p class="text-xs text-slate-400">Bahan bacaan persiapan keluarga sakinah, kesehatan, dan fikih munakahat.</p>
+                        </div>
+
+                        <!-- Filter Controls -->
+                        <div class="flex items-center space-x-3">
+                            <select id="materiFilterCategory" onchange="filterMateriPeserta()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <option value="ALL">Semua Kategori</option>
+                                <option value="Fikih Munakahat">Fikih Munakahat</option>
+                                <option value="Keluarga Sakinah">Keluarga Sakinah</option>
+                                <option value="Kesehatan Reproduksi">Kesehatan Reproduksi</option>
+                                <option value="Psikologi Keluarga">Psikologi Keluarga</option>
+                            </select>
+
+                            <input type="text" id="materiFilterSearch" onkeyup="filterMateriPeserta()" placeholder="Cari Judul..." class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 w-36 sm:w-48">
+                        </div>
+                    </div>
+
+                    <!-- Cards Grid 3x4 Aspect Ratio -->
+                    <div class="p-6">
+                        <div id="materiGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            <!-- Items dynamically generated -->
+                        </div>
+
+                        <!-- Pagination Bar -->
+                        <div class="mt-6 flex items-center justify-between border-t pt-4 text-xs">
+                            <span class="text-slate-500" id="materiPageInfo">Menampilkan 1-5 dari 10 materi</span>
+                            <div class="flex space-x-1" id="materiPaginationBtns">
+                                <!-- Pagination controls -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ========================================================================= -->
+        <!-- MODE ADMIN SECTION                                                        -->
+        <!-- ========================================================================= -->
+        <section id="adminSection" class="hidden space-y-6">
+
+            <!-- Admin Nav Tabs (4 Menus) -->
+            <div class="bg-white rounded-2xl p-2 shadow-card border border-slate-200/80 flex flex-wrap gap-1 text-xs font-bold">
+                <button onclick="setAdminTab('monitoring')" id="tabBtnMonitoring" class="flex-1 py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 bg-indigo-600 text-white shadow-md">
+                    <i class="fa-solid fa-users-rectangle text-sm"></i>
+                    <span>Monitoring Peserta</span>
+                </button>
+                <button onclick="setAdminTab('soal')" id="tabBtnSoal" class="flex-1 py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-list-check text-sm"></i>
+                    <span>Bank Soal</span>
+                </button>
+                <button onclick="setAdminTab('materi')" id="tabBtnMateri" class="flex-1 py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-folder-open text-sm"></i>
+                    <span>Materi & Modul</span>
+                </button>
+                <button onclick="setAdminTab('pengaturan')" id="tabBtnPengaturan" class="flex-1 py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-gears text-sm"></i>
+                    <span>Pengaturan</span>
+                </button>
+            </div>
+
+            <!-- ADMIN TAB 1: MONITORING PESERTA -->
+            <div id="adminTabMonitoring" class="space-y-4">
+
+                <!-- Filter Controls & Export -->
+                <div class="bg-white rounded-2xl p-4 shadow-card border border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
+                        <!-- Filter Tgl Akad -->
+                        <select id="admFilterAkad" onchange="renderMonitoringTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                            <option value="ALL">Semua Tanggal Akad</option>
+                        </select>
+
+                        <!-- Filter Tgl Bimwin Offline -->
+                        <select id="admFilterBimwin" onchange="renderMonitoringTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                            <option value="ALL">Semua Tanggal Bimwin</option>
+                        </select>
+
+                        <!-- Filter Status Post Test -->
+                        <select id="admFilterPostStatus" onchange="renderMonitoringTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                            <option value="ALL">Semua Status Post Test</option>
+                            <option value="BELUM">Belum Mengerjakan Semua</option>
+                            <option value="LULUS_SATU">Lulus Satu Pasangan</option>
+                            <option value="LULUS_SEMUA">Lulus Semua (Kedua Catin)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <button onclick="resetMonitoringFilters()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> Reset
+                        </button>
+                        <button onclick="exportMonitoringExcel()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-md flex items-center">
+                            <i class="fa-solid fa-file-excel mr-2"></i> Export Excel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold text-[11px] tracking-wider">
+                                    <th class="py-3 px-4">Pasangan Catin (Pria & Wanita)</th>
+                                    <th class="py-3 px-4">Tgl Bimwin Offline</th>
+                                    <th class="py-3 px-4">Tgl Akad</th>
+                                    <th class="py-3 px-4 text-center">Kehadiran Luring</th>
+                                    <th class="py-3 px-4">Status Post Test</th>
+                                    <th class="py-3 px-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableMonitoringBody" class="divide-y divide-slate-100 text-xs">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN TAB 2: BANK SOAL -->
+            <div id="adminTabSoal" class="hidden space-y-4">
+                <div class="bg-white rounded-2xl p-4 shadow-card border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <select id="soalFilterKategori" onchange="renderSoalTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                            <option value="ALL">Semua Kategori</option>
+                        </select>
+                        <select id="soalFilterJenis" onchange="renderSoalTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                            <option value="ALL">Semua Jenis Soal</option>
+                            <option value="Pilihan Ganda Biasa">Pilihan Ganda Biasa</option>
+                            <option value="Pilihan Ganda Bertingkat">Pilihan Ganda Bertingkat</option>
+                        </select>
+                        <select id="soalFilterPeruntukan" onchange="renderSoalTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                            <option value="ALL">Semua Peruntukan</option>
+                            <option value="Pria Saja">Pria Saja</option>
+                            <option value="Wanita Saja">Wanita Saja</option>
+                            <option value="Pria dan Wanita">Pria dan Wanita</option>
+                        </select>
+                        <select id="soalFilterStatus" onchange="renderSoalTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                            <option value="ALL">Semua Status</option>
+                            <option value="Aktif">Aktif</option>
+                            <option value="Nonaktif">Nonaktif</option>
+                        </select>
+                    </div>
+
+                    <button onclick="openFormSoalModal()" class="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center justify-center">
+                        <i class="fa-solid fa-plus mr-2"></i> Tambah Soal
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold text-[11px] tracking-wider">
+                                    <th class="py-3 px-4">ID</th>
+                                    <th class="py-3 px-4">Pertanyaan</th>
+                                    <th class="py-3 px-4">Kategori & Jenis</th>
+                                    <th class="py-3 px-4">Peruntukan</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableSoalBody" class="divide-y divide-slate-100 text-xs">
+                                <!-- Dynamic soal rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN TAB 3: MATERI MANAGEMENT -->
+            <div id="adminTabMateri" class="hidden space-y-4">
+                <div class="bg-white rounded-2xl p-4 shadow-card border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <input type="text" id="admMateriSearch" onkeyup="renderAdminMateriGrid()" placeholder="Cari Judul Materi..." class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                        <select id="admMateriKategori" onchange="renderAdminMateriGrid()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                            <option value="ALL">Semua Kategori</option>
+                            <option value="Fikih Munakahat">Fikih Munakahat</option>
+                            <option value="Keluarga Sakinah">Keluarga Sakinah</option>
+                            <option value="Kesehatan Reproduksi">Kesehatan Reproduksi</option>
+                            <option value="Psikologi Keluarga">Psikologi Keluarga</option>
+                        </select>
+                    </div>
+
+                    <button onclick="openFormMateriModal()" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center justify-center">
+                        <i class="fa-solid fa-plus mr-2"></i> Tambah Materi
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
+                    <div id="adminMateriGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        <!-- Dynamic items -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN TAB 4: PENGATURAN -->
+            <div id="adminTabPengaturan" class="hidden space-y-6">
+                
+                <!-- Profil Instansi KUA -->
+                <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
+                    <h3 class="font-bold text-slate-800 text-sm border-b pb-3 mb-4 flex items-center">
+                        <i class="fa-solid fa-building-columns text-indigo-600 mr-2"></i> Profil Instansi KUA
+                    </h3>
+                    <form onsubmit="saveKuaSettings(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nama KUA</label>
+                            <input type="text" id="cfgNamaKua" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nama Kepala KUA</label>
+                            <input type="text" id="cfgKepalaKua" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">NIP Kepala KUA</label>
+                            <input type="text" id="cfgNipKepala" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Alamat KUA</label>
+                            <input type="text" id="cfgAlamatKua" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        </div>
+                        <div class="sm:col-span-2 text-right">
+                            <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition">
+                                Simpan Profil KUA
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Template Placeholder Info -->
+                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 text-xs text-indigo-900 space-y-2">
+                    <h4 class="font-bold flex items-center"><i class="fa-solid fa-code mr-2 text-indigo-600"></i> Placeholders Template yang Tersedia:</h4>
+                    <div class="flex flex-wrap gap-1.5 font-mono text-[11px]">
+                        <span class="px-2 py-1 bg-white rounded border border-indigo-200">{NAMA_PRIA}</span>
+                        <span class="px-2 py-1 bg-white rounded border border-indigo-200">{NIK_PRIA}</span>
+                        <span class="px-2 py-1 bg-white rounded border border-indigo-200">{NAMA_WANITA}</span>
+                        <span class="px-2 py-1 bg-white rounded border border-indigo-200">{NIK_WANITA}</span>
+                        <span class="px-2 py-1 bg-white rounded border border-indigo-200">{TANGGAL_AKAD}</span>
+                        <span class="px-2 py-1 bg-white rounded border border-indigo-200">{TANGGAL_BIMWIN}</span>
+                        <span class="px-2 py-1 bg-white rounded border border-indigo-200">{NAMA_KUA}</span>
+                        <span class="px-2 py-1 bg-white rounded border border-indigo-200">{NO_UNDANGAN}</span>
+                        <span class="px-2 py-1 bg-white rounded border border-indigo-200">{NO_SERTIFIKAT}</span>
+                    </div>
+                </div>
+
+                <!-- Template Settings: Undangan & Sertifikat -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Template Undangan -->
+                    <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-sm border-b pb-3 mb-4 flex items-center justify-between">
+                            <span><i class="fa-solid fa-envelope-open-text text-amber-500 mr-2"></i> Template Undangan Bimwin</span>
+                            <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-mono" id="lblCounterUndangan">Counter: 101</span>
+                        </h3>
+                        <form onsubmit="saveTemplateUndanganSettings(event)" class="space-y-3 text-xs">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Format Nomor Surat</label>
+                                <input type="text" id="cfgFormatUndangan" value="B-{COUNTER}/Kua.13.01/PW.01/{YEAR}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Google Docs / Slide Template ID</label>
+                                <input type="text" id="cfgGdocUndangan" value="1A2B3C4D5E6F7G8H9I0_UNDANGAN_DOC_ID" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition">
+                                Simpan Setting Undangan
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Template Sertifikat -->
+                    <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-sm border-b pb-3 mb-4 flex items-center justify-between">
+                            <span><i class="fa-solid fa-award text-emerald-600 mr-2"></i> Template Sertifikat Bimwin</span>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-mono" id="lblCounterSertifikat">Counter: 501</span>
+                        </h3>
+                        <form onsubmit="saveTemplateSertifikatSettings(event)" class="space-y-3 text-xs">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Format Nomor Sertifikat</label>
+                                <input type="text" id="cfgFormatSertifikat" value="SERT/{COUNTER}/BIMWIN-KUA/{MONTH}/{YEAR}" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Google Docs / Slide Template ID</label>
+                                <input type="text" id="cfgGdocSertifikat" value="1X2Y3Z4W5V6U7T8S_SERTIFIKAT_SLIDE_ID" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition">
+                                Simpan Setting Sertifikat
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Post Test KKM & Timer Settings -->
+                <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100">
+                    <h3 class="font-bold text-slate-800 text-sm border-b pb-3 mb-4 flex items-center">
+                        <i class="fa-solid fa-sliders text-purple-600 mr-2"></i> Pengaturan Post-Test
+                    </h3>
+                    <form onsubmit="savePostTestSettings(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nilai KKM Minimum Lulus</label>
+                            <input type="number" id="cfgKkm" min="50" max="100" value="75" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Waktu Pengerjaan Tes (Menit)</label>
+                            <input type="number" id="cfgWaktuTes" min="1" max="120" value="15" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        </div>
+                        <div class="sm:col-span-2 text-right">
+                            <button type="submit" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition">
+                                Simpan Setting Post-Test
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- FULLSCREEN POST TEST OVERLAY MODAL                                        -->
+    <!-- ========================================================================= -->
+    <div id="postTestModal" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-md hidden flex flex-col justify-between p-4 sm:p-8 text-white overflow-y-auto">
+        <!-- Header & Countdown Timer Top Right -->
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4 max-w-4xl mx-auto w-full">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center font-bold text-lg">
+                    <i class="fa-solid fa-pen-nib"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base">Ujian Post-Test Bimwin</h3>
+                    <p class="text-xs text-slate-400" id="testUserIdentity">Peserta: Ahmad (Pria)</p>
+                </div>
+            </div>
+
+            <!-- Timer Countdown -->
+            <div class="flex items-center space-x-2 bg-slate-800 px-4 py-2 rounded-2xl border border-slate-700">
+                <i class="fa-regular fa-clock text-amber-400 animate-pulse text-base"></i>
+                <span class="font-mono font-extrabold text-lg text-amber-400" id="testTimerText">15:00</span>
+            </div>
+        </div>
+
+        <!-- Questions Card Area -->
+        <div class="max-w-3xl mx-auto w-full py-8 space-y-6">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+                <span id="questionCounter">Soal 1 dari 5</span>
+                <span class="px-2.5 py-1 rounded bg-purple-900/50 text-purple-300 font-semibold" id="questionCategoryTag">Fikih Munakahat</span>
+            </div>
+
+            <div class="bg-slate-800/80 border border-slate-700 p-6 sm:p-8 rounded-3xl space-y-6 shadow-2xl">
+                <h4 class="text-base sm:text-lg font-bold text-slate-100 leading-relaxed" id="questionText">
+                    Loading pertanyaan...
+                </h4>
+
+                <div class="space-y-3" id="optionsContainer">
+                    <!-- Options buttons -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Action Bar -->
+        <div class="flex items-center justify-between max-w-3xl mx-auto w-full border-t border-slate-800 pt-4">
+            <button id="btnPrevQuestion" onclick="navigateQuestion(-1)" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold transition disabled:opacity-30">
+                <i class="fa-solid fa-arrow-left mr-2"></i> Sebelumnya
+            </button>
+            
+            <button id="btnNextQuestion" onclick="navigateQuestion(1)" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-xs font-bold transition">
+                Berikutnya <i class="fa-solid fa-arrow-right ml-2"></i>
+            </button>
+
+            <button id="btnSubmitTest" onclick="submitPostTest()" class="hidden px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold transition shadow-lg">
+                Selesai & Kirim <i class="fa-solid fa-check-double ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- EDIT PROFILE MODAL -->
+    <div id="editProfileModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-sm">Edit Data Profil Saya</h3>
+                <button onclick="closeEditProfileModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleSaveProfileEdit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap</label>
+                    <input type="text" id="editNama" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nomor WhatsApp</label>
+                    <input type="tel" id="editWa" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Alamat</label>
+                    <textarea id="editAlamat" rows="2" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"></textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Ubah Tanggal Bimwin Offline</label>
+                    <select id="editTglBimwin" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                    </select>
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeEditProfileModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- DETAIL PESERTA POPUP (ADMIN VIEW) -->
+    <div id="detailPesertaModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-3xl w-full p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-base">Detail Pasangan Calon Pengantin</h3>
+                <button onclick="closeDetailPesertaModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <!-- Two Columns (Left Male, Right Female) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <!-- Male -->
+                <div class="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-2">
+                    <span class="text-xs font-bold text-blue-700 uppercase tracking-wide flex items-center"><i class="fa-solid fa-mars mr-1.5"></i> Catin Pria</span>
+                    <div><span class="text-slate-400">Nama:</span> <p class="font-bold text-slate-800" id="detNamaPria">-</p></div>
+                    <div><span class="text-slate-400">NIK:</span> <p class="font-semibold text-slate-700" id="detNikPria">-</p></div>
+                    <div><span class="text-slate-400">No WA:</span> <p class="font-semibold text-slate-700" id="detWaPria">-</p></div>
+                    <div><span class="text-slate-400">Alamat:</span> <p class="font-semibold text-slate-700" id="detAlamatPria">-</p></div>
+                    <div class="pt-2 border-t border-blue-200/50"><span class="text-slate-400">Nilai Post Test:</span> <p class="font-extrabold text-blue-700 text-sm" id="detScorePria">0</p></div>
+                </div>
+
+                <!-- Female -->
+                <div class="p-4 bg-rose-50/50 rounded-2xl border border-rose-100 space-y-2">
+                    <span class="text-xs font-bold text-rose-700 uppercase tracking-wide flex items-center"><i class="fa-solid fa-venus mr-1.5"></i> Catin Wanita</span>
+                    <div><span class="text-slate-400">Nama:</span> <p class="font-bold text-slate-800" id="detNamaWanita">-</p></div>
+                    <div><span class="text-slate-400">NIK:</span> <p class="font-semibold text-slate-700" id="detNikWanita">-</p></div>
+                    <div><span class="text-slate-400">No WA:</span> <p class="font-semibold text-slate-700" id="detWaWanita">-</p></div>
+                    <div><span class="text-slate-400">Alamat:</span> <p class="font-semibold text-slate-700" id="detAlamatWanita">-</p></div>
+                    <div class="pt-2 border-t border-rose-200/50"><span class="text-slate-400">Nilai Post Test:</span> <p class="font-extrabold text-rose-700 text-sm" id="detScoreWanita">0</p></div>
+                </div>
+            </div>
+
+            <!-- Document Actions -->
+            <div class="pt-3 border-t flex flex-wrap gap-2 justify-end">
+                <button id="btnViewUndanganAdmin" onclick="viewUndanganFromAdmin()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center">
+                    <i class="fa-solid fa-file-pdf mr-2"></i> Lihat Surat Undangan
+                </button>
+                <button id="btnViewSertifikatAdmin" onclick="viewSertifikatFromAdmin()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md transition disabled:opacity-40 flex items-center">
+                    <i class="fa-solid fa-certificate mr-2"></i> Lihat Sertifikat
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORM SOAL MODAL -->
+    <div id="formSoalModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-sm" id="formSoalTitle">Tambah Soal Post Test</h3>
+                <button onclick="closeFormSoalModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleSaveSoal(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="soalId">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Kategori Soal</label>
+                        <input type="text" id="soalKategori" required placeholder="Contoh: Fikih" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Pembuat Soal</label>
+                        <input type="text" id="soalPembuat" required placeholder="Nama Penyusun" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Jenis Soal</label>
+                        <select id="soalJenis" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                            <option value="Pilihan Ganda Biasa">Pilihan Ganda Biasa</option>
+                            <option value="Pilihan Ganda Bertingkat">Pilihan Ganda Bertingkat</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Peruntukan Soal</label>
+                        <select id="soalPeruntukan" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                            <option value="Pria dan Wanita">Pria dan Wanita</option>
+                            <option value="Pria Saja">Pria Saja</option>
+                            <option value="Wanita Saja">Wanita Saja</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Pertanyaan</label>
+                    <textarea id="soalTeks" rows="2" required placeholder="Tuliskan teks pertanyaan..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"></textarea>
+                </div>
+                <div class="space-y-2">
+                    <label class="block font-semibold text-slate-700">Pilihan Jawaban & Kunci</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="radio" name="kunciRadio" value="A" checked class="text-emerald-600 focus:ring-emerald-500">
+                        <input type="text" id="optA" required placeholder="Pilihan A" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="radio" name="kunciRadio" value="B" class="text-emerald-600 focus:ring-emerald-500">
+                        <input type="text" id="optB" required placeholder="Pilihan B" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="radio" name="kunciRadio" value="C" class="text-emerald-600 focus:ring-emerald-500">
+                        <input type="text" id="optC" required placeholder="Pilihan C" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="radio" name="kunciRadio" value="D" class="text-emerald-600 focus:ring-emerald-500">
+                        <input type="text" id="optD" required placeholder="Pilihan D" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeFormSoalModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-md">Simpan Soal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MATERI PDF PREVIEW POPUP MODAL -->
+    <div id="previewMateriModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b pb-3">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm" id="prevMateriTitle">Judul Modul</h3>
+                    <p class="text-xs text-slate-400" id="prevMateriAuthor">Pengarang: KUA Pusat</p>
+                </div>
+                <button onclick="closePreviewMateriModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="bg-slate-100 rounded-2xl p-8 border border-slate-200 text-center space-y-3">
+                <div class="w-20 h-28 bg-rose-500 text-white rounded-xl mx-auto flex flex-col items-center justify-center shadow-lg font-bold">
+                    <i class="fa-solid fa-file-pdf text-3xl mb-1"></i>
+                    <span class="text-[10px]">PDF</span>
+                </div>
+                <p class="text-xs text-slate-600">Dokumen PDF Pembelajaran Modul Bimbingan Perkawinan Resmi KUA.</p>
+                <div class="pt-2">
+                    <a id="btnMateriOpenPdf" href="#" target="_blank" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md inline-flex items-center">
+                        <i class="fa-solid fa-arrow-up-right-from-square mr-2"></i> Buka Fullscreen PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAS MODAL INFO / CONNECTOR SETUP -->
+    <div id="gasModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center"><i class="fa-solid fa-database text-emerald-600 mr-2"></i> AppsScript Backend Bridge</h3>
+                <button onclick="toggleGasModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Aplikasi frontend ini siap dihubungkan langsung dengan Web App Google Apps Script (`doGet` / `doPost`) untuk menyimpan data ke Google Sheets.
+            </p>
+            <div class="space-y-2 text-xs">
+                <label class="block font-semibold text-slate-700">URL Web App Apps Script (Opsional)</label>
+                <input type="url" id="gasWebAppUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+            </div>
+            <div class="pt-2 flex justify-end space-x-2">
+                <button onclick="toggleGasModal()" class="px-5 py-2 bg-slate-800 text-white font-bold rounded-xl text-xs">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- APPLICATION JAVASCRIPT LOGIC                                             -->
+    <!-- ========================================================================= -->
+    <script>
+        /* -------------------------------------------------------------------------
+         * LOCAL STORAGE INITIAL SEED DATA
+         * ------------------------------------------------------------------------- */
+        const DEFAULT_BIMWIN_DATES = ["2026-10-20", "2026-10-25", "2026-11-05", "2026-11-12"];
+
+        const INITIAL_KUA_SETTINGS = {
+            namaKua: "KUA Kecamatan Smart Kota",
+            kepalaKua: "H. Ahmad Fauzi, S.Ag., M.H.",
+            nipKepala: "19780512 200312 1 002",
+            alamatKua: "Jl. Masjid Agung No. 12, Pusat Kota",
+            formatUndangan: "B-{COUNTER}/Kua.13.01/PW.01/{YEAR}",
+            gdocUndangan: "1A2B3C4D5E6F7G8H9I0_UNDANGAN",
+            counterUndangan: 101,
+            formatSertifikat: "SERT/{COUNTER}/BIMWIN-KUA/{MONTH}/{YEAR}",
+            gdocSertifikat: "1X2Y3Z4W5V6U7T8S_SERTIFIKAT",
+            counterSertifikat: 501,
+            kkm: 75,
+            waktuTes: 15
+        };
+
+        const INITIAL_COUPLES = [
+            {
+                id: "CP-1001",
+                nikPria: "3201011505950001",
+                namaPria: "Ahmad Rizki",
+                waPria: "081234567890",
+                alamatPria: "Jl. Pemuda No. 10",
+                nikWanita: "3201015208960002",
+                namaWanita: "Siti Nurhaliza",
+                waWanita: "089876543210",
+                alamatWanita: "Jl. Mawar No. 4",
+                tglAkad: "2026-11-20",
+                tglBimwin: "2026-10-20",
+                offlineConfirmed: true,
+                priaPostTest: { completed: true, score: 90, passed: true },
+                wanitaPostTest: { completed: true, score: 85, passed: true },
+                noUndangan: "B-101/Kua.13.01/PW.01/2026",
+                noSertifikat: "SERT/501/BIMWIN-KUA/10/2026"
+            },
+            {
+                id: "CP-1002",
+                nikPria: "3201011010940003",
+                namaPria: "Budi Santoso",
+                waPria: "08111222333",
+                alamatPria: "Jl. Melati No. 8",
+                nikWanita: "3201014505970004",
+                namaWanita: "Dewi Lestari",
+                waWanita: "08555666777",
+                alamatWanita: "Jl. Anggrek No. 12",
+                tglAkad: "2026-11-30",
+                tglBimwin: "2026-10-25",
+                offlineConfirmed: false,
+                priaPostTest: { completed: false, score: 0, passed: false },
+                wanitaPostTest: { completed: false, score: 0, passed: false },
+                noUndangan: "B-102/Kua.13.01/PW.01/2026",
+                noSertifikat: ""
+            }
+        ];
+
+        const INITIAL_SOAL = [
+            {
+                id: "S01",
+                kategori: "Fikih Munakahat",
+                jenis: "Pilihan Ganda Biasa",
+                peruntukan: "Pria dan Wanita",
+                pembuat: "KUA Smart",
+                teks: "Apa kewajiban utama suami terhadap istri setelah melaksanakan akad nikah yang sah?",
+                optA: "Memberikan nafkah lahir dan batin",
+                optB: "Menyiapkan hiburan",
+                optC: "Membawa istri pindah rumah",
+                optD: "Membeli perhiasan mahal",
+                kunci: "A",
+                status: "Aktif"
+            },
+            {
+                id: "S02",
+                kategori: "Keluarga Sakinah",
+                jenis: "Pilihan Ganda Biasa",
+                peruntukan: "Pria Saja",
+                pembuat: "KUA Smart",
+                teks: "Bagaimanakah sikap kepala keluarga jika terjadi kesalahpahaman dalam rumah tangga?",
+                optA: "Mengabaikan masalah",
+                optB: "Bermusyawarah dengan lemah lembut dan penuh kesabaran",
+                optC: "Mengambil keputusan sepihak",
+                optD: "Marah-marah di media sosial",
+                kunci: "B",
+                status: "Aktif"
+            },
+            {
+                id: "S03",
+                kategori: "Kesehatan Reproduksi",
+                jenis: "Pilihan Ganda Biasa",
+                peruntukan: "Wanita Saja",
+                pembuat: "Puskesmas KUA",
+                teks: "Mengapa pemeriksaan kesehatan awal (catin) penting dilakukan bagi calon pengantin wanita?",
+                optA: "Hanya syarat administratif",
+                optB: "Mendeteksi risiko anemia dan kesiapan kehamilan sehat",
+                optC: "Menambah biaya nikah",
+                optD: "Memastikan kecantikan",
+                kunci: "B",
+                status: "Aktif"
+            },
+            {
+                id: "S04",
+                kategori: "Psikologi Keluarga",
+                jenis: "Pilihan Ganda Biasa",
+                peruntukan: "Pria dan Wanita",
+                pembuat: "Konselor KUA",
+                teks: "Kunci utama menciptakan komunikasi yang efektif dalam pernikahan adalah...",
+                optA: "Selalu mengalah tanpa bicara",
+                optB: "Mendengarkan secara aktif dan saling menghargai",
+                optC: "Sering memberi hadiah",
+                optD: "Saling berargumen hingga menang",
+                kunci: "B",
+                status: "Aktif"
+            }
+        ];
+
+        const INITIAL_MATERI = [
+            {
+                id: "M01",
+                judul: "Fondasi Keluarga Sakinah Mawaddah Wa Rahmah",
+                kategori: "Keluarga Sakinah",
+                pengarang: "Kementerian Agama RI",
+                pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+            },
+            {
+                id: "M02",
+                judul: "Panduan Fikih Hak dan Kewajiban Suami Istri",
+                kategori: "Fikih Munakahat",
+                pengarang: "Tim Pakar KUA",
+                pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+            },
+            {
+                id: "M03",
+                judul: "Manajemen Keuangan Rumah Tangga Islami",
+                kategori: "Psikologi Keluarga",
+                pengarang: "Konselor Keuangan",
+                pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+            },
+            {
+                id: "M04",
+                judul: "Kesehatan Reproduksi Catin & Pencegahan Stunting",
+                kategori: "Kesehatan Reproduksi",
+                pengarang: "Dinas Kesehatan",
+                pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+            }
+        ];
+
+        /* -------------------------------------------------------------------------
+         * STATE INITIALIZATION
+         * ------------------------------------------------------------------------- */
+        let state = {
+            role: 'peserta', // 'peserta' or 'admin'
+            activeUser: null, // logged couple object + gender info { couple, gender: 'PRIA'/'WANITA' }
+            couples: JSON.parse(localStorage.getItem('bimwin_couples')) || INITIAL_COUPLES,
+            soal: JSON.parse(localStorage.getItem('bimwin_soal')) || INITIAL_SOAL,
+            materi: JSON.parse(localStorage.getItem('bimwin_materi')) || INITIAL_MATERI,
+            settings: JSON.parse(localStorage.getItem('bimwin_settings')) || INITIAL_KUA_SETTINGS,
+            materiPage: 1,
+            materiPerPage: 5,
+            activeExam: null // timer, questions, currentIdx, answers
+        };
+
+        function saveState() {
+            localStorage.setItem('bimwin_couples', JSON.stringify(state.couples));
+            localStorage.setItem('bimwin_soal', JSON.stringify(state.soal));
+            localStorage.setItem('bimwin_materi', JSON.stringify(state.materi));
+            localStorage.setItem('bimwin_settings', JSON.stringify(state.settings));
+        }
+
+        window.onload = function() {
+            renderHeaderKuaInfo();
+            populateBimwinDateDropdowns();
+            renderMateriGrid();
+            renderAdminAll();
+            
+            // Default load check
+            switchRole('peserta');
+        };
+
+        function renderHeaderKuaInfo() {
+            document.getElementById('headerKuaName').innerText = state.settings.namaKua;
+            document.getElementById('cfgNamaKua').value = state.settings.namaKua;
+            document.getElementById('cfgKepalaKua').value = state.settings.kepalaKua;
+            document.getElementById('cfgNipKepala').value = state.settings.nipKepala;
+            document.getElementById('cfgAlamatKua').value = state.settings.alamatKua;
+            document.getElementById('cfgKkm').value = state.settings.kkm;
+            document.getElementById('cfgWaktuTes').value = state.settings.waktuTes;
+            document.getElementById('kkmInfoLabel').innerText = `KKM: ${state.settings.kkm}`;
+            document.getElementById('lblCounterUndangan').innerText = `Counter: ${state.settings.counterUndangan}`;
+            document.getElementById('lblCounterSertifikat').innerText = `Counter: ${state.settings.counterSertifikat}`;
+        }
+
+        function populateBimwinDateDropdowns() {
+            const selectReg = document.getElementById('regTglBimwin');
+            const selectEdit = document.getElementById('editTglBimwin');
+            selectReg.innerHTML = '<option value="">-- Pilih Tanggal Bimwin --</option>';
+            selectEdit.innerHTML = '';
+
+            DEFAULT_BIMWIN_DATES.forEach(d => {
+                const opt1 = document.createElement('option');
+                opt1.value = d;
+                opt1.textContent = formatDateID(d);
+                selectReg.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = d;
+                opt2.textContent = formatDateID(d);
+                selectEdit.appendChild(opt2);
+            });
+        }
+
+        function updateBimwinDateOptions() {
+            const akadVal = document.getElementById('regTglAkad').value;
+            if (!akadVal) return;
+            const selectReg = document.getElementById('regTglBimwin');
+            selectReg.innerHTML = '<option value="">-- Pilih Tanggal Bimwin --</option>';
+
+            DEFAULT_BIMWIN_DATES.filter(d => d < akadVal).forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = formatDateID(d);
+                selectReg.appendChild(opt);
+            });
+        }
+
+        function formatDateID(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const color = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-slate-800');
+            toast.className = `${color} text-white px-4 py-3 rounded-2xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition duration-300 transform translate-y-2`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        /* -------------------------------------------------------------------------
+         * ROLE SWITCHING LOGIC
+         * ------------------------------------------------------------------------- */
+        function switchRole(newRole) {
+            state.role = newRole;
+            const btnP = document.getElementById('btnRolePeserta');
+            const btnA = document.getElementById('btnRoleAdmin');
+            const secP = document.getElementById('pesertaSection');
+            const secA = document.getElementById('adminSection');
+
+            if (newRole === 'peserta') {
+                btnP.className = "px-3 py-1.5 rounded-lg transition-all shadow-sm bg-white text-slate-800 font-bold";
+                btnA.className = "px-3 py-1.5 rounded-lg transition-all text-slate-500 hover:text-slate-800";
+                secP.classList.remove('hidden');
+                secA.classList.add('hidden');
+            } else {
+                btnA.className = "px-3 py-1.5 rounded-lg transition-all shadow-sm bg-white text-indigo-700 font-bold";
+                btnP.className = "px-3 py-1.5 rounded-lg transition-all text-slate-500 hover:text-slate-800";
+                secA.classList.remove('hidden');
+                secP.classList.add('hidden');
+                renderAdminAll();
+            }
+        }
+
+        /* -------------------------------------------------------------------------
+         * PESERTA AUTHENTICATION & DASHBOARD LOGIC
+         * ------------------------------------------------------------------------- */
+        function setAuthMode(mode) {
+            const formL = document.getElementById('formLoginPeserta');
+            const formR = document.getElementById('formRegisterPeserta');
+            const tabL = document.getElementById('tabAuthLogin');
+            const tabR = document.getElementById('tabAuthRegister');
+            const title = document.getElementById('authTitle');
+
+            if (mode === 'login') {
+                formL.classList.remove('hidden');
+                formR.classList.add('hidden');
+                tabL.className = "py-2.5 rounded-lg bg-white shadow-sm text-emerald-700 font-bold";
+                tabR.className = "py-2.5 rounded-lg text-slate-500 hover:text-slate-800";
+                title.innerText = "Masuk Akun Catin";
+            } else {
+                formR.classList.remove('hidden');
+                formL.classList.add('hidden');
+                tabR.className = "py-2.5 rounded-lg bg-white shadow-sm text-emerald-700 font-bold";
+                tabL.className = "py-2.5 rounded-lg text-slate-500 hover:text-slate-800";
+                title.innerText = "Pendaftaran Bimwin";
+            }
+        }
+
+        function handleLoginPeserta(e) {
+            e.preventDefault();
+            const nikInput = document.getElementById('loginNik').value.trim();
+            const couple = state.couples.find(c => c.nikPria === nikInput || c.nikWanita === nikInput);
+
+            if (!couple) {
+                showToast("NIK tidak ditemukan! Silakan daftar Bimwin terlebih dahulu.", "error");
+                return;
+            }
+
+            const gender = couple.nikPria === nikInput ? 'PRIA' : 'WANITA';
+            state.activeUser = { couple, gender };
+            showToast(`Login Berhasil sebagai Catin ${gender === 'PRIA' ? 'Pria' : 'Wanita'}!`);
+            renderPesertaDashboard();
+        }
+
+        function handleRegisterPeserta(e) {
+            e.preventDefault();
+            const nikPria = document.getElementById('regNikPria').value.trim();
+            const nikWanita = document.getElementById('regNikWanita').value.trim();
+
+            if (state.couples.some(c => c.nikPria === nikPria || c.nikWanita === nikWanita)) {
+                showToast("NIK Catin Pria/Wanita sudah terdaftar sebelumnya!", "error");
+                return;
+            }
+
+            const newCouple = {
+                id: 'CP-' + (1000 + state.couples.length + 1),
+                nikPria: nikPria,
+                namaPria: document.getElementById('regNamaPria').value.trim(),
+                waPria: document.getElementById('regWaPria').value.trim(),
+                alamatPria: document.getElementById('regAlamatPria').value.trim(),
+                nikWanita: nikWanita,
+                namaWanita: document.getElementById('regNamaWanita').value.trim(),
+                waWanita: document.getElementById('regWaWanita').value.trim(),
+                alamatWanita: document.getElementById('regAlamatWanita').value.trim(),
+                tglAkad: document.getElementById('regTglAkad').value,
+                tglBimwin: document.getElementById('regTglBimwin').value,
+                offlineConfirmed: false,
+                priaPostTest: { completed: false, score: 0, passed: false },
+                wanitaPostTest: { completed: false, score: 0, passed: false },
+                noUndangan: `B-${state.settings.counterUndangan}/Kua.13.01/PW.01/${new Date().getFullYear()}`,
+                noSertifikat: ""
+            };
+
+            state.settings.counterUndangan++;
+            state.couples.push(newCouple);
+            saveState();
+
+            showToast("Pendaftaran Bimwin Sukses! Silakan Login dengan NIK Anda.");
+            setAuthMode('login');
+            document.getElementById('loginNik').value = nikPria;
+        }
+
+        function renderPesertaDashboard() {
+            if (!state.activeUser) return;
+            const { couple, gender } = state.activeUser;
+
+            document.getElementById('pesertaAuthBox').classList.add('hidden');
+            document.getElementById('pesertaDashboardBox').classList.remove('hidden');
+
+            // Header Banner
+            document.getElementById('welcomeCoupleName').innerText = `${couple.namaPria} & ${couple.namaWanita}`;
+            document.getElementById('welcomeScheduleText').innerText = `Jadwal Bimwin Offline: ${formatDateID(couple.tglBimwin)}`;
+            document.getElementById('loggedAsRole').innerText = `Login Sebagai Catin ${gender === 'PRIA' ? 'Pria (' + couple.namaPria + ')' : 'Wanita (' + couple.namaWanita + ')'}`;
+
+            // Profile Card
+            document.getElementById('badgeGender').innerText = gender === 'PRIA' ? 'Catin Pria' : 'Catin Wanita';
+            document.getElementById('badgeGender').className = gender === 'PRIA' ? 'px-2.5 py-1 text-[11px] font-bold rounded-full bg-blue-100 text-blue-700' : 'px-2.5 py-1 text-[11px] font-bold rounded-full bg-rose-100 text-rose-700';
+            
+            if (gender === 'PRIA') {
+                document.getElementById('profNama').innerText = couple.namaPria;
+                document.getElementById('profNik').innerText = couple.nikPria;
+                document.getElementById('profWa').innerText = couple.waPria;
+                document.getElementById('profAlamat').innerText = couple.alamatPria;
+                document.getElementById('profPasangan').innerText = `${couple.namaWanita} (Wanita)`;
+            } else {
+                document.getElementById('profNama').innerText = couple.namaWanita;
+                document.getElementById('profNik').innerText = couple.nikWanita;
+                document.getElementById('profWa').innerText = couple.waWanita;
+                document.getElementById('profAlamat').innerText = couple.alamatWanita;
+                document.getElementById('profPasangan').innerText = `${couple.namaPria} (Pria)`;
+            }
+
+            // Reminder Box Visibility
+            const remBox = document.getElementById('reminderAlertBox');
+            if (couple.offlineConfirmed) {
+                remBox.classList.add('hidden');
+            } else {
+                remBox.classList.remove('hidden');
+                document.getElementById('remindBimwinDate').innerText = formatDateID(couple.tglBimwin);
+            }
+
+            // Offline Attendance Badge
+            const offIcon = document.getElementById('statusOfflineIcon');
+            const offText = document.getElementById('statusOfflineText');
+            if (couple.offlineConfirmed) {
+                offIcon.className = "w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl shrink-0";
+                offIcon.innerHTML = '<i class="fa-solid fa-user-check"></i>';
+                offText.innerText = "Sudah Ikut Bimbingan Offline";
+                offText.className = "font-bold text-emerald-700 text-sm";
+            } else {
+                offIcon.className = "w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shrink-0";
+                offIcon.innerHTML = '<i class="fa-solid fa-user-clock"></i>';
+                offText.innerText = "Belum Bimbingan Offline";
+                offText.className = "font-bold text-amber-700 text-sm";
+            }
+
+            // Post Test Locked/Unlocked Logic
+            const lockBox = document.getElementById('postTestLockedBox');
+            const unlockBox = document.getElementById('postTestUnlockedBox');
+            const btnBar = document.getElementById('postTestButtonsBar');
+
+            if (!couple.offlineConfirmed) {
+                lockBox.classList.remove('hidden');
+                unlockBox.classList.add('hidden');
+                btnBar.classList.add('hidden');
+            } else {
+                lockBox.classList.add('hidden');
+                unlockBox.classList.remove('hidden');
+                btnBar.classList.remove('hidden');
+
+                // Update Pria Test Badge & Score
+                document.getElementById('scorePriaText').innerText = couple.priaPostTest.score;
+                const bPria = document.getElementById('badgeStatusPostPria');
+                if (!couple.priaPostTest.completed) {
+                    bPria.className = "px-2 py-0.5 text-[10px] font-bold rounded bg-slate-200 text-slate-600";
+                    bPria.innerText = "Belum Tes";
+                } else if (couple.priaPostTest.passed) {
+                    bPria.className = "px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-100 text-emerald-700";
+                    bPria.innerText = "LULUS";
+                } else {
+                    bPria.className = "px-2 py-0.5 text-[10px] font-bold rounded bg-rose-100 text-rose-700";
+                    bPria.innerText = "TIDAK LULUS";
+                }
+
+                // Update Wanita Test Badge & Score
+                document.getElementById('scoreWanitaText').innerText = couple.wanitaPostTest.score;
+                const bWanita = document.getElementById('badgeStatusPostWanita');
+                if (!couple.wanitaPostTest.completed) {
+                    bWanita.className = "px-2 py-0.5 text-[10px] font-bold rounded bg-slate-200 text-slate-600";
+                    bWanita.innerText = "Belum Tes";
+                } else if (couple.wanitaPostTest.passed) {
+                    bWanita.className = "px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-100 text-emerald-700";
+                    bWanita.innerText = "LULUS";
+                } else {
+                    bWanita.className = "px-2 py-0.5 text-[10px] font-bold rounded bg-rose-100 text-rose-700";
+                    bWanita.innerText = "TIDAK LULUS";
+                }
+
+                // Current logged person test status for button label
+                const myTest = gender === 'PRIA' ? couple.priaPostTest : couple.wanitaPostTest;
+                const btnStart = document.getElementById('btnStartPostTest');
+
+                if (!myTest.completed) {
+                    btnStart.innerHTML = '<i class="fa-solid fa-pen-ruler mr-2"></i> Kerjakan Post Test';
+                } else if (!myTest.passed) {
+                    btnStart.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> Kerjakan Ulang Post Test';
+                } else if (myTest.score < 100) {
+                    btnStart.innerHTML = '<i class="fa-solid fa-chart-line mr-2"></i> Tingkatkan Nilai Tes';
+                } else {
+                    btnStart.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i> Nilai Anda Sempurna (100)';
+                }
+
+                // Download Sertifikat Button (Unlocked only if BOTH passed)
+                const btnCert = document.getElementById('btnDownloadSertifikat');
+                const bothPassed = couple.priaPostTest.passed && couple.wanitaPostTest.passed;
+                btnCert.disabled = !bothPassed;
+            }
+        }
+
+        function logoutPeserta() {
+            state.activeUser = null;
+            document.getElementById('pesertaDashboardBox').classList.add('hidden');
+            document.getElementById('pesertaAuthBox').classList.remove('hidden');
+            showToast("Anda telah keluar dari akun.");
+        }
+
+        function openEditProfileModal() {
+            if (!state.activeUser) return;
+            const { couple, gender } = state.activeUser;
+
+            document.getElementById('editNama').value = gender === 'PRIA' ? couple.namaPria : couple.namaWanita;
+            document.getElementById('editWa').value = gender === 'PRIA' ? couple.waPria : couple.waWanita;
+            document.getElementById('editAlamat').value = gender === 'PRIA' ? couple.alamatPria : couple.alamatWanita;
+            document.getElementById('editTglBimwin').value = couple.tglBimwin;
+
+            document.getElementById('editProfileModal').classList.remove('hidden');
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').classList.add('hidden');
+        }
+
+        function handleSaveProfileEdit(e) {
+            e.preventDefault();
+            if (!state.activeUser) return;
+            const { couple, gender } = state.activeUser;
+
+            if (gender === 'PRIA') {
+                couple.namaPria = document.getElementById('editNama').value.trim();
+                couple.waPria = document.getElementById('editWa').value.trim();
+                couple.alamatPria = document.getElementById('editAlamat').value.trim();
+            } else {
+                couple.namaWanita = document.getElementById('editNama').value.trim();
+                couple.waWanita = document.getElementById('editWa').value.trim();
+                couple.alamatWanita = document.getElementById('editAlamat').value.trim();
+            }
+
+            couple.tglBimwin = document.getElementById('editTglBimwin').value;
+            saveState();
+
+            closeEditProfileModal();
+            renderPesertaDashboard();
+            showToast("Profil berhasil diperbarui!");
+        }
+
+        /* -------------------------------------------------------------------------
+         * POST TEST ENGINE LOGIC
+         * ------------------------------------------------------------------------- */
+        function startPostTest() {
+            if (!state.activeUser) return;
+            const { couple, gender } = state.activeUser;
+
+            // Filter active questions by peruntukan (gender targeted)
+            const availableSoal = state.soal.filter(s => {
+                if (s.status !== 'Aktif') return false;
+                if (s.peruntukan === 'Pria dan Wanita') return true;
+                if (gender === 'PRIA' && s.peruntukan === 'Pria Saja') return true;
+                if (gender === 'WANITA' && s.peruntukan === 'Wanita Saja') return true;
+                return false;
+            });
+
+            if (availableSoal.length === 0) {
+                showToast("Belum ada soal post-test yang tersedia untuk kategori Anda.", "error");
+                return;
+            }
+
+            // Shuffle questions
+            const shuffled = [...availableSoal].sort(() => Math.random() - 0.5);
+
+            state.activeExam = {
+                questions: shuffled,
+                currentIdx: 0,
+                answers: {}, // questionId -> chosenOpt
+                timeLeft: state.settings.waktuTes * 60, // seconds
+                timerInterval: null
+            };
+
+            document.getElementById('testUserIdentity').innerText = `Peserta: ${gender === 'PRIA' ? couple.namaPria + ' (Pria)' : couple.namaWanita + ' (Wanita)'}`;
+            document.getElementById('postTestModal').classList.remove('hidden');
+
+            renderCurrentQuestion();
+            startTestTimer();
+        }
+
+        function startTestTimer() {
+            if (state.activeExam.timerInterval) clearInterval(state.activeExam.timerInterval);
+
+            state.activeExam.timerInterval = setInterval(() => {
+                state.activeExam.timeLeft--;
+                const m = Math.floor(state.activeExam.timeLeft / 60);
+                const s = state.activeExam.timeLeft % 60;
+                document.getElementById('testTimerText').innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+                if (state.activeExam.timeLeft <= 0) {
+                    clearInterval(state.activeExam.timerInterval);
+                    showToast("Waktu tes telah habis! Jawaban Anda otomatis dikirim.", "error");
+                    submitPostTest();
+                }
+            }, 1000);
+        }
+
+        function renderCurrentQuestion() {
+            const { questions, currentIdx, answers } = state.activeExam;
+            const q = questions[currentIdx];
+
+            document.getElementById('questionCounter').innerText = `Soal ${currentIdx + 1} dari ${questions.length}`;
+            document.getElementById('questionCategoryTag').innerText = q.kategori;
+            document.getElementById('questionText').innerText = q.teks;
+
+            const optsDiv = document.getElementById('optionsContainer');
+            optsDiv.innerHTML = '';
+
+            const options = [
+                { key: 'A', text: q.optA },
+                { key: 'B', text: q.optB },
+                { key: 'C', text: q.optC },
+                { key: 'D', text: q.optD }
+            ];
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                const isSelected = answers[q.id] === opt.key;
+                btn.className = `w-full p-4 rounded-2xl text-left border text-xs sm:text-sm font-medium transition flex items-center justify-between ${isSelected ? 'bg-purple-600 text-white border-purple-500 shadow-lg' : 'bg-slate-700/60 hover:bg-slate-700 border-slate-600 text-slate-200'}`;
+                btn.onclick = () => selectAnswer(q.id, opt.key);
+                btn.innerHTML = `<span><strong class="mr-2">${opt.key}.</strong> ${opt.text}</span> ${isSelected ? '<i class="fa-solid fa-circle-check text-base"></i>' : ''}`;
+                optsDiv.appendChild(btn);
+            });
+
+            // Nav buttons state
+            document.getElementById('btnPrevQuestion').disabled = currentIdx === 0;
+            if (currentIdx === questions.length - 1) {
+                document.getElementById('btnNextQuestion').classList.add('hidden');
+                document.getElementById('btnSubmitTest').classList.remove('hidden');
+            } else {
+                document.getElementById('btnNextQuestion').classList.remove('hidden');
+                document.getElementById('btnSubmitTest').classList.add('hidden');
+            }
+        }
+
+        function selectAnswer(qId, key) {
+            state.activeExam.answers[qId] = key;
+            renderCurrentQuestion();
+        }
+
+        function navigateQuestion(direction) {
+            state.activeExam.currentIdx += direction;
+            renderCurrentQuestion();
+        }
+
+        function submitPostTest() {
+            if (state.activeExam.timerInterval) clearInterval(state.activeExam.timerInterval);
+
+            const { questions, answers } = state.activeExam;
+            let correctCount = 0;
+
+            questions.forEach(q => {
+                if (answers[q.id] === q.kunci) {
+                    correctCount++;
+                }
+            });
+
+            const finalScore = Math.round((correctCount / questions.length) * 100);
+            const isPassed = finalScore >= state.settings.kkm;
+
+            const { couple, gender } = state.activeUser;
+            const resultData = {
+                completed: true,
+                score: finalScore,
+                passed: isPassed
+            };
+
+            if (gender === 'PRIA') {
+                couple.priaPostTest = resultData;
+            } else {
+                couple.wanitaPostTest = resultData;
+            }
+
+            // If both passed and no certificate number assigned yet
+            if (couple.priaPostTest.passed && couple.wanitaPostTest.passed && !couple.noSertifikat) {
+                const now = new Date();
+                couple.noSertifikat = `SERT/${state.settings.counterSertifikat}/BIMWIN-KUA/${now.getMonth() + 1}/${now.getFullYear()}`;
+                state.settings.counterSertifikat++;
+            }
+
+            saveState();
+
+            document.getElementById('postTestModal').classList.add('hidden');
+            renderPesertaDashboard();
+
+            if (isPassed) {
+                showToast(`Selamat! Anda LULUS Post Test dengan nilai ${finalScore}`, "success");
+            } else {
+                showToast(`Nilai Anda ${finalScore} (Belum Lulus KKM ${state.settings.kkm}). Silakan kerjakan ulang!`, "error");
+            }
+        }
+
+        /* -------------------------------------------------------------------------
+         * MATERI GRID & PAGINATION (PESERTA VIEW)
+         * ------------------------------------------------------------------------- */
+        function renderMateriGrid() {
+            const container = document.getElementById('materiGridContainer');
+            if (!container) return;
+
+            const categoryFilter = document.getElementById('materiFilterCategory')?.value || 'ALL';
+            const searchFilter = document.getElementById('materiFilterSearch')?.value.toLowerCase() || '';
+
+            const filtered = state.materi.filter(m => {
+                const matchCat = categoryFilter === 'ALL' || m.kategori === categoryFilter;
+                const matchSearch = m.judul.toLowerCase().includes(searchFilter);
+                return matchCat && matchSearch;
+            });
+
+            // Pagination
+            const total = filtered.length;
+            const totalPages = Math.ceil(total / state.materiPerPage) || 1;
+            if (state.materiPage > totalPages) state.materiPage = 1;
+
+            const startIdx = (state.materiPage - 1) * state.materiPerPage;
+            const pageItems = filtered.slice(startIdx, startIdx + state.materiPerPage);
+
+            container.innerHTML = '';
+
+            pageItems.forEach(m => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 hover:bg-white rounded-2xl p-4 border border-slate-200 hover:border-emerald-500 shadow-sm hover:shadow-card transition duration-200 flex flex-col justify-between ratio-3-4 group cursor-pointer";
+                card.onclick = () => openPreviewMateri(m);
+                card.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="w-full h-24 bg-gradient-to-tr from-emerald-600 to-teal-500 rounded-xl flex flex-col items-center justify-center text-white p-2 text-center shadow-md">
+                            <i class="fa-solid fa-file-pdf text-2xl mb-1 group-hover:scale-110 transition"></i>
+                            <span class="text-[9px] font-bold uppercase tracking-wider">${m.kategori}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-xs line-clamp-2 leading-snug group-hover:text-emerald-600 transition">${m.judul}</h4>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-medium">Oleh: ${m.pengarang}</p>
+                        <button class="mt-2 w-full py-1.5 bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white rounded-lg text-[11px] font-bold transition">
+                            <i class="fa-regular fa-eye mr-1"></i> Baca PDF
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            // Page info
+            document.getElementById('materiPageInfo').innerText = `Menampilkan ${total === 0 ? 0 : startIdx + 1}-${Math.min(startIdx + state.materiPerPage, total)} dari ${total} materi`;
+
+            // Pagination buttons
+            const pNav = document.getElementById('materiPaginationBtns');
+            pNav.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                const pBtn = document.createElement('button');
+                pBtn.className = `px-3 py-1 rounded-lg text-xs font-bold transition ${i === state.materiPage ? 'bg-emerald-600 text-white shadow' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
+                pBtn.innerText = i;
+                pBtn.onclick = () => {
+                    state.materiPage = i;
+                    renderMateriGrid();
+                };
+                pNav.appendChild(pBtn);
+            }
+        }
+
+        function filterMateriPeserta() {
+            state.materiPage = 1;
+            renderMateriGrid();
+        }
+
+        function openPreviewMateri(m) {
+            document.getElementById('prevMateriTitle').innerText = m.judul;
+            document.getElementById('prevMateriAuthor').innerText = `Pengarang: ${m.pengarang} (${m.kategori})`;
+            document.getElementById('btnMateriOpenPdf').href = m.pdfUrl;
+            document.getElementById('previewMateriModal').classList.remove('hidden');
+        }
+
+        function closePreviewMateriModal() {
+            document.getElementById('previewMateriModal').classList.add('hidden');
+        }
+
+        /* -------------------------------------------------------------------------
+         * DOCUMENT PDF GENERATION (UNDANGAN & SERTIFIKAT)
+         * ------------------------------------------------------------------------- */
+        function downloadUndanganBimwin() {
+            if (!state.activeUser) return;
+            generateUndanganPdf(state.activeUser.couple);
+        }
+
+        function generateUndanganPdf(couple) {
+            const htmlContent = `
+                <div style="font-family: Arial, sans-serif; padding: 40px; color: #1e293b;">
+                    <div style="text-align: center; border-bottom: 2px solid #15803d; padding-bottom: 15px; margin-bottom: 25px;">
+                        <h2 style="margin:0; font-size: 18px; color: #15803d; text-transform: uppercase;">KEMENTERIAN AGAMA REPUBLIK INDONESIA</h2>
+                        <h3 style="margin:5px 0 0 0; font-size: 16px;">KANTOR URUSAN AGAMA KECAMATAN</h3>
+                        <p style="margin:5px 0 0 0; font-size: 11px; color: #64748b;">${state.settings.alamatKua}</p>
+                    </div>
+
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h4 style="margin:0; font-size: 14px; text-decoration: underline;">SURAT UNDANGAN BIMBINGAN PERKAWINAN</h4>
+                        <p style="margin:5px 0 0 0; font-size: 12px; font-family: monospace;">Nomor: ${couple.noUndangan}</p>
+                    </div>
+
+                    <p style="font-size: 12px; leading-height: 1.6;">
+                        Kepada Yth. Calon Pengantin:<br>
+                        <strong>1. ${couple.namaPria} (NIK: ${couple.nikPria})</strong><br>
+                        <strong>2. ${couple.namaWanita} (NIK: ${couple.nikWanita})</strong>
+                    </p>
+
+                    <p style="font-size: 12px; line-height: 1.6;">
+                        Diberitahukan bahwa Anda diwajibkan untuk mengikuti Bimbingan Perkawinan (Bimwin) Tatap Muka Luring yang akan dilaksanakan pada:
+                    </p>
+
+                    <table style="width: 100%; font-size: 12px; margin: 15px 0; border-collapse: collapse;">
+                        <tr><td style="width: 30%; padding: 4px 0;"><strong>Hari/Tanggal:</strong></td><td>${formatDateID(couple.tglBimwin)}</td></tr>
+                        <tr><td style="padding: 4px 0;"><strong>Waktu:</strong></td><td>08:00 WIB s/d Selesai</td></tr>
+                        <tr><td style="padding: 4px 0;"><strong>Tempat:</strong></td><td>Aula Utama ${state.settings.namaKua}</td></tr>
+                        <tr><td style="padding: 4px 0;"><strong>Tanggal Akad:</strong></td><td>${formatDateID(couple.tglAkad)}</td></tr>
+                    </table>
+
+                    <p style="font-size: 12px; line-height: 1.6;">
+                        Demikian surat undangan ini disampaikan untuk dapat dipenuhi dengan sebaik-baiknya.
+                    </p>
+
+                    <div style="margin-top: 50px; float: right; text-align: center; font-size: 12px;">
+                        <p style="margin:0;">Kepala KUA Kecamatan</p>
+                        <div style="height: 60px;"></div>
+                        <p style="margin:0; font-weight: bold; text-decoration: underline;">${state.settings.kepalaKua}</p>
+                        <p style="margin:0; font-size: 10px;">NIP. ${state.settings.nipKepala}</p>
+                    </div>
+                </div>
+            `;
+
+            const opt = {
+                margin: 0.5,
+                filename: `Undangan_Bimwin_${couple.namaPria}_${couple.namaWanita}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(htmlContent).save();
+        }
+
+        function downloadSertifikatBimwin() {
+            if (!state.activeUser) return;
+            generateSertifikatPdf(state.activeUser.couple);
+        }
+
+        function generateSertifikatPdf(couple) {
+            const htmlContent = `
+                <div style="font-family: Georgia, serif; padding: 40px; border: 10px double #15803d; background: #fffdfa; color: #1e293b; text-align: center;">
+                    <h1 style="font-size: 24px; color: #15803d; margin:0; letter-spacing: 2px;">SERTIFIKAT BIMBINGAN PERKAWINAN</h1>
+                    <p style="font-size: 12px; font-family: monospace; margin: 8px 0 25px 0;">Nomor: ${couple.noSertifikat}</p>
+
+                    <p style="font-size: 13px; font-style: italic;">Kepala Kantor Urusan Agama Kecamatan menerangkan bahwa:</p>
+
+                    <div style="margin: 20px 0; padding: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+                        <h2 style="font-size: 18px; color: #0f172a; margin:0;">${couple.namaPria}</h2>
+                        <p style="font-size: 11px; margin: 2px 0 10px 0;">NIK: ${couple.nikPria}</p>
+                        <span style="font-size: 16px; font-weight: bold; color: #15803d;">&</span>
+                        <h2 style="font-size: 18px; color: #0f172a; margin:10px 0 0 0;">${couple.namaWanita}</h2>
+                        <p style="font-size: 11px; margin: 2px 0 0 0;">NIK: ${couple.nikWanita}</p>
+                    </div>
+
+                    <p style="font-size: 13px; line-height: 1.6;">
+                        Telah mengikuti dan <strong>LULUS</strong> Kegiatan Bimbingan Perkawinan (Bimwin) Bagi Calon Pengantin luring dan ujian post-test pada ${formatDateID(couple.tglBimwin)} di ${state.settings.namaKua}.
+                    </p>
+
+                    <div style="margin-top: 40px; text-align: right; font-size: 12px; display: inline-block; float: right;">
+                        <p style="margin:0;">Ditetapkan di: Pusat Kota</p>
+                        <p style="margin:2px 0 0 0;">Kepala KUA Kecamatan</p>
+                        <div style="height: 50px;"></div>
+                        <p style="margin:0; font-weight: bold; text-decoration: underline;">${state.settings.kepalaKua}</p>
+                        <p style="margin:0; font-size: 10px;">NIP. ${state.settings.nipKepala}</p>
+                    </div>
+                </div>
+            `;
+
+            const opt = {
+                margin: 0.5,
+                filename: `Sertifikat_Bimwin_${couple.namaPria}_${couple.namaWanita}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(htmlContent).save();
+        }
+
+        /* -------------------------------------------------------------------------
+         * ADMIN DASHBOARD LOGIC
+         * ------------------------------------------------------------------------- */
+        function setAdminTab(tabName) {
+            const tabs = ['monitoring', 'soal', 'materi', 'pengaturan'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                const content = document.getElementById(`adminTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (t === tabName) {
+                    btn.className = "flex-1 py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 bg-indigo-600 text-white shadow-md font-bold";
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = "flex-1 py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 text-slate-600 hover:bg-slate-100 font-bold";
+                    content.classList.add('hidden');
+                }
+            });
+
+            renderAdminAll();
+        }
+
+        function renderAdminAll() {
+            renderMonitoringTable();
+            populateMonitoringFilters();
+            renderSoalTable();
+            renderAdminMateriGrid();
+        }
+
+        /* 1. MONITORING PESERTA */
+        function populateMonitoringFilters() {
+            const selAkad = document.getElementById('admFilterAkad');
+            const selBimwin = document.getElementById('admFilterBimwin');
+
+            const akads = [...new Set(state.couples.map(c => c.tglAkad))];
+            const bimwins = [...new Set(state.couples.map(c => c.tglBimwin))];
+
+            selAkad.innerHTML = '<option value="ALL">Semua Tanggal Akad</option>';
+            akads.forEach(d => {
+                selAkad.innerHTML += `<option value="${d}">${formatDateID(d)}</option>`;
+            });
+
+            selBimwin.innerHTML = '<option value="ALL">Semua Tanggal Bimwin</option>';
+            bimwins.forEach(d => {
+                selBimwin.innerHTML += `<option value="${d}">${formatDateID(d)}</option>`;
+            });
+        }
+
+        function renderMonitoringTable() {
+            const tbody = document.getElementById('tableMonitoringBody');
+            if (!tbody) return;
+
+            const filterAkad = document.getElementById('admFilterAkad').value;
+            const filterBimwin = document.getElementById('admFilterBimwin').value;
+            const filterPost = document.getElementById('admFilterPostStatus').value;
+
+            const filtered = state.couples.filter(c => {
+                if (filterAkad !== 'ALL' && c.tglAkad !== filterAkad) return false;
+                if (filterBimwin !== 'ALL' && c.tglBimwin !== filterBimwin) return false;
+
+                const bothPassed = c.priaPostTest.passed && c.wanitaPostTest.passed;
+                const onePassed = (c.priaPostTest.passed || c.wanitaPostTest.passed) && !bothPassed;
+                const nonePassed = !c.priaPostTest.passed && !c.wanitaPostTest.passed;
+
+                if (filterPost === 'BELUM' && !nonePassed) return false;
+                if (filterPost === 'LULUS_SATU' && !onePassed) return false;
+                if (filterPost === 'LULUS_SEMUA' && !bothPassed) return false;
+
+                return true;
+            });
+
+            tbody.innerHTML = '';
+
+            filtered.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition";
+
+                const bothPassed = c.priaPostTest.passed && c.wanitaPostTest.passed;
+                let postBadge = '<span class="px-2 py-1 rounded bg-slate-100 text-slate-600 font-bold text-[10px]">Belum Lulus Semua</span>';
+                if (bothPassed) {
+                    postBadge = '<span class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-bold text-[10px]"><i class="fa-solid fa-circle-check mr-1"></i> Lulus Semua</span>';
+                } else if (c.priaPostTest.passed || c.wanitaPostTest.passed) {
+                    postBadge = '<span class="px-2 py-1 rounded bg-amber-100 text-amber-700 font-bold text-[10px]">Lulus 1 Pasangan</span>';
+                }
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4">
+                        <div class="font-bold text-slate-800">${c.namaPria} & ${c.namaWanita}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${c.id}</div>
+                    </td>
+                    <td class="py-3 px-4 font-medium">${formatDateID(c.tglBimwin)}</td>
+                    <td class="py-3 px-4 font-medium">${formatDateID(c.tglAkad)}</td>
+                    <td class="py-3 px-4 text-center">
+                        <input type="checkbox" ${c.offlineConfirmed ? 'checked' : ''} onchange="toggleOfflineAttendance('${c.id}', this.checked)" class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer">
+                    </td>
+                    <td class="py-3 px-4">${postBadge}</td>
+                    <td class="py-3 px-4 text-center space-x-1">
+                        <button onclick="openDetailPesertaModal('${c.id}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg transition text-[11px]">
+                            Detail
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function toggleOfflineAttendance(coupleId, isChecked) {
+            const c = state.couples.find(item => item.id === coupleId);
+            if (c) {
+                c.offlineConfirmed = isChecked;
+                saveState();
+                showToast(`Kehadiran luring ${c.namaPria} & ${c.namaWanita} ${isChecked ? 'Dikonfirmasi' : 'Dibatalkan'}`);
+            }
+        }
+
+        function resetMonitoringFilters() {
+            document.getElementById('admFilterAkad').value = 'ALL';
+            document.getElementById('admFilterBimwin').value = 'ALL';
+            document.getElementById('admFilterPostStatus').value = 'ALL';
+            renderMonitoringTable();
+        }
+
+        function exportMonitoringExcel() {
+            const data = state.couples.map(c => ({
+                'ID Catin': c.id,
+                'Nama Pria': c.namaPria,
+                'NIK Pria': c.nikPria,
+                'WA Pria': c.waPria,
+                'Nama Wanita': c.namaWanita,
+                'NIK Wanita': c.nikWanita,
+                'WA Wanita': c.waWanita,
+                'Tgl Akad': c.tglAkad,
+                'Tgl Bimwin': c.tglBimwin,
+                'Hadir Luring': c.offlineConfirmed ? 'YA' : 'BELUM',
+                'Nilai Post Test Pria': c.priaPostTest.score,
+                'Nilai Post Test Wanita': c.wanitaPostTest.score,
+                'Lulus Sertifikat': (c.priaPostTest.passed && c.wanitaPostTest.passed) ? 'YA' : 'TIDAK'
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data Peserta Bimwin");
+            XLSX.writeFile(wb, "Data_Peserta_Bimwin_KUA.xlsx");
+        }
+
+        let currentDetailCouple = null;
+        function openDetailPesertaModal(coupleId) {
+            const c = state.couples.find(item => item.id === coupleId);
+            if (!c) return;
+            currentDetailCouple = c;
+
+            document.getElementById('detNamaPria').innerText = c.namaPria;
+            document.getElementById('detNikPria').innerText = c.nikPria;
+            document.getElementById('detWaPria').innerText = c.waPria;
+            document.getElementById('detAlamatPria').innerText = c.alamatPria;
+            document.getElementById('detScorePria').innerText = `${c.priaPostTest.score} (${c.priaPostTest.passed ? 'Lulus' : 'Belum'})`;
+
+            document.getElementById('detNamaWanita').innerText = c.namaWanita;
+            document.getElementById('detNikWanita').innerText = c.nikWanita;
+            document.getElementById('detWaWanita').innerText = c.waWanita;
+            document.getElementById('detAlamatWanita').innerText = c.alamatWanita;
+            document.getElementById('detScoreWanita').innerText = `${c.wanitaPostTest.score} (${c.wanitaPostTest.passed ? 'Lulus' : 'Belum'})`;
+
+            const btnCert = document.getElementById('btnViewSertifikatAdmin');
+            const bothPassed = c.priaPostTest.passed && c.wanitaPostTest.passed;
+            btnCert.disabled = !bothPassed;
+
+            document.getElementById('detailPesertaModal').classList.remove('hidden');
+        }
+
+        function closeDetailPesertaModal() {
+            document.getElementById('detailPesertaModal').classList.add('hidden');
+        }
+
+        function viewUndanganFromAdmin() {
+            if (currentDetailCouple) generateUndanganPdf(currentDetailCouple);
+        }
+
+        function viewSertifikatFromAdmin() {
+            if (currentDetailCouple) generateSertifikatPdf(currentDetailCouple);
+        }
+
+        /* 2. BANK SOAL LOGIC */
+        function renderSoalTable() {
+            const tbody = document.getElementById('tableSoalBody');
+            if (!tbody) return;
+
+            const katFilter = document.getElementById('soalFilterKategori').value;
+            const jenisFilter = document.getElementById('soalFilterJenis').value;
+            const peruntukanFilter = document.getElementById('soalFilterPeruntukan').value;
+            const statusFilter = document.getElementById('soalFilterStatus').value;
+
+            // Populate categories dropdown
+            const cats = [...new Set(state.soal.map(s => s.kategori))];
+            const selCat = document.getElementById('soalFilterKategori');
+            selCat.innerHTML = '<option value="ALL">Semua Kategori</option>';
+            cats.forEach(k => {
+                selCat.innerHTML += `<option value="${k}">${k}</option>`;
+            });
+            selCat.value = katFilter;
+
+            const filtered = state.soal.filter(s => {
+                if (katFilter !== 'ALL' && s.kategori !== katFilter) return false;
+                if (jenisFilter !== 'ALL' && s.jenis !== jenisFilter) return false;
+                if (peruntukanFilter !== 'ALL' && s.peruntukan !== peruntukanFilter) return false;
+                if (statusFilter !== 'ALL' && s.status !== statusFilter) return false;
+                return true;
+            });
+
+            tbody.innerHTML = '';
+
+            filtered.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-bold text-slate-500">${s.id}</td>
+                    <td class="py-3 px-4 font-medium text-slate-800 max-w-xs truncate">${s.teks}</td>
+                    <td class="py-3 px-4">
+                        <span class="block font-bold text-indigo-600">${s.kategori}</span>
+                        <span class="text-[10px] text-slate-400">${s.jenis}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">${s.peruntukan}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${s.status === 'Aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}">${s.status}</span>
+                    </td>
+                    <td class="py-3 px-4 text-center space-x-1">
+                        <button onclick="toggleStatusSoal('${s.id}')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded text-[10px]">
+                            ${s.status === 'Aktif' ? 'Nonaktifkan' : 'Aktifkan'}
+                        </button>
+                        <button onclick="editSoal('${s.id}')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded text-[10px]">Edit</button>
+                        <button onclick="deleteSoal('${s.id}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded text-[10px]">Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openFormSoalModal() {
+            document.getElementById('soalId').value = '';
+            document.getElementById('soalKategori').value = '';
+            document.getElementById('soalPembuat').value = state.settings.namaKua;
+            document.getElementById('soalTeks').value = '';
+            document.getElementById('optA').value = '';
+            document.getElementById('optB').value = '';
+            document.getElementById('optC').value = '';
+            document.getElementById('optD').value = '';
+            document.getElementById('formSoalTitle').innerText = "Tambah Soal Post Test";
+            document.getElementById('formSoalModal').classList.remove('hidden');
+        }
+
+        function closeFormSoalModal() {
+            document.getElementById('formSoalModal').classList.add('hidden');
+        }
+
+        function handleSaveSoal(e) {
+            e.preventDefault();
+            const sId = document.getElementById('soalId').value;
+            const selectedKunci = document.querySelector('input[name="kunciRadio"]:checked')?.value || 'A';
+
+            if (sId) {
+                // Edit
+                const s = state.soal.find(item => item.id === sId);
+                if (s) {
+                    s.kategori = document.getElementById('soalKategori').value;
+                    s.pembuat = document.getElementById('soalPembuat').value;
+                    s.jenis = document.getElementById('soalJenis').value;
+                    s.peruntukan = document.getElementById('soalPeruntukan').value;
+                    s.teks = document.getElementById('soalTeks').value;
+                    s.optA = document.getElementById('optA').value;
+                    s.optB = document.getElementById('optB').value;
+                    s.optC = document.getElementById('optC').value;
+                    s.optD = document.getElementById('optD').value;
+                    s.kunci = selectedKunci;
+                }
+            } else {
+                // Create
+                const newS = {
+                    id: 'S' + String(state.soal.length + 1).padStart(2, '0'),
+                    kategori: document.getElementById('soalKategori').value,
+                    pembuat: document.getElementById('soalPembuat').value,
+                    jenis: document.getElementById('soalJenis').value,
+                    peruntukan: document.getElementById('soalPeruntukan').value,
+                    teks: document.getElementById('soalTeks').value,
+                    optA: document.getElementById('optA').value,
+                    optB: document.getElementById('optB').value,
+                    optC: document.getElementById('optC').value,
+                    optD: document.getElementById('optD').value,
+                    kunci: selectedKunci,
+                    status: 'Aktif'
+                };
+                state.soal.push(newS);
+            }
+
+            saveState();
+            closeFormSoalModal();
+            renderSoalTable();
+            showToast("Soal berhasil disimpan!");
+        }
+
+        function editSoal(id) {
+            const s = state.soal.find(item => item.id === id);
+            if (!s) return;
+
+            document.getElementById('soalId').value = s.id;
+            document.getElementById('soalKategori').value = s.kategori;
+            document.getElementById('soalPembuat').value = s.pembuat;
+            document.getElementById('soalJenis').value = s.jenis;
+            document.getElementById('soalPeruntukan').value = s.peruntukan;
+            document.getElementById('soalTeks').value = s.teks;
+            document.getElementById('optA').value = s.optA;
+            document.getElementById('optB').value = s.optB;
+            document.getElementById('optC').value = s.optC;
+            document.getElementById('optD').value = s.optD;
+            document.getElementById('formSoalTitle').innerText = "Edit Soal " + s.id;
+
+            const radio = document.querySelector(`input[name="kunciRadio"][value="${s.kunci}"]`);
+            if (radio) radio.checked = true;
+
+            document.getElementById('formSoalModal').classList.remove('hidden');
+        }
+
+        function toggleStatusSoal(id) {
+            const s = state.soal.find(item => item.id === id);
+            if (s) {
+                s.status = s.status === 'Aktif' ? 'Nonaktif' : 'Aktif';
+                saveState();
+                renderSoalTable();
+            }
+        }
+
+        function deleteSoal(id) {
+            state.soal = state.soal.filter(item => item.id !== id);
+            saveState();
+            renderSoalTable();
+            showToast("Soal telah dihapus!");
+        }
+
+        /* 3. MATERI ADMIN MANAGEMENT */
+        function renderAdminMateriGrid() {
+            const container = document.getElementById('adminMateriGrid');
+            if (!container) return;
+
+            const searchVal = document.getElementById('admMateriSearch')?.value.toLowerCase() || '';
+            const catVal = document.getElementById('admMateriKategori')?.value || 'ALL';
+
+            const filtered = state.materi.filter(m => {
+                const matchCat = catVal === 'ALL' || m.kategori === catVal;
+                const matchSearch = m.judul.toLowerCase().includes(searchVal);
+                return matchCat && matchSearch;
+            });
+
+            container.innerHTML = '';
+
+            filtered.forEach(m => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between ratio-3-4";
+                card.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="w-full h-24 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow">
+                            <i class="fa-solid fa-book-bookmark"></i>
+                        </div>
+                        <span class="text-[10px] font-bold uppercase text-indigo-600 block">${m.kategori}</span>
+                        <h4 class="font-bold text-slate-800 text-xs line-clamp-2">${m.judul}</h4>
+                    </div>
+                    <div class="pt-2 border-t border-slate-200 flex justify-between space-x-1">
+                        <button onclick="openPreviewMateri({judul:'${m.judul}', pengarang:'${m.pengarang}', kategori:'${m.kategori}', pdfUrl:'${m.pdfUrl}'})" class="flex-1 py-1 bg-slate-200 hover:bg-slate-300 rounded text-[10px] font-bold">Preview</button>
+                        <button onclick="deleteMateri('${m.id}')" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded text-[10px] font-bold"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function deleteMateri(id) {
+            state.materi = state.materi.filter(m => m.id !== id);
+            saveState();
+            renderAdminMateriGrid();
+            renderMateriGrid();
+            showToast("Materi telah dihapus!");
+        }
+
+        function openFormMateriModal() {
+            const title = prompt("Masukkan Judul Materi Baru:");
+            if (!title) return;
+            const author = prompt("Masukkan Nama Pengarang/Instansi:", state.settings.namaKua);
+            
+            const newM = {
+                id: 'M' + String(state.materi.length + 1).padStart(2, '0'),
+                judul: title,
+                kategori: "Keluarga Sakinah",
+                pengarang: author || "KUA",
+                pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+            };
+
+            state.materi.push(newM);
+            saveState();
+            renderAdminMateriGrid();
+            renderMateriGrid();
+            showToast("Materi baru berhasil ditambahkan!");
+        }
+
+        /* 4. SETTINGS HANDLERS */
+        function saveKuaSettings(e) {
+            e.preventDefault();
+            state.settings.namaKua = document.getElementById('cfgNamaKua').value;
+            state.settings.kepalaKua = document.getElementById('cfgKepalaKua').value;
+            state.settings.nipKepala = document.getElementById('cfgNipKepala').value;
+            state.settings.alamatKua = document.getElementById('cfgAlamatKua').value;
+            saveState();
+            renderHeaderKuaInfo();
+            showToast("Profil KUA Berhasil Diperbarui!");
+        }
+
+        function saveTemplateUndanganSettings(e) {
+            e.preventDefault();
+            state.settings.formatUndangan = document.getElementById('cfgFormatUndangan').value;
+            state.settings.gdocUndangan = document.getElementById('cfgGdocUndangan').value;
+            saveState();
+            showToast("Pengaturan Template Undangan Disimpan!");
+        }
+
+        function saveTemplateSertifikatSettings(e) {
+            e.preventDefault();
+            state.settings.formatSertifikat = document.getElementById('cfgFormatSertifikat').value;
+            state.settings.gdocSertifikat = document.getElementById('cfgGdocSertifikat').value;
+            saveState();
+            showToast("Pengaturan Template Sertifikat Disimpan!");
+        }
+
+        function savePostTestSettings(e) {
+            e.preventDefault();
+            state.settings.kkm = parseInt(document.getElementById('cfgKkm').value) || 75;
+            state.settings.waktuTes = parseInt(document.getElementById('cfgWaktuTes').value) || 15;
+            saveState();
+            renderHeaderKuaInfo();
+            showToast("Pengaturan KKM dan Waktu Tes Disimpan!");
+        }
+
+        function toggleGasModal() {
+            document.getElementById('gasModal').classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
