@@ -117,7 +117,7 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
 <div id="toasts" class="fixed bottom-4 right-4 z-[70] space-y-2"></div>
 
 <script>
-/* ===== KONFIGURASI: isi dua nilai ini ===== */
+/* ===== KONFIGURASI (sudah terisi; ubah hanya jika membuat deployment/Client ID baru) ===== */
 const GAS_URL='https://script.google.com/macros/s/AKfycbypbqFV8Uy_MGTo7SSunXrh7gOEtcwDTlhbm4vzDBBPZIDT-nhXg351yNQQX1bJFHzT5w/exec';
 const CLIENT_ID='892487021153-fvncd26atbtn6hqd24iqvd264n085lrt.apps.googleusercontent.com';
 /* ========================================= */
@@ -296,7 +296,7 @@ function renderSet(){const s=S.ad.settings;
   $('t_set').innerHTML=`<div class="grid md:grid-cols-2 gap-4">
   ${cardS('Profil instansi',[['namaKua','Nama KUA'],['alamatKua','Alamat KUA'],['kepalaKua','Nama kepala'],['nipKepala','NIP kepala']])}
   <div class="card space-y-3"><h3 class="font-bold">Jadwal Bimwin yang tersedia</h3><div class="flex gap-2"><input id="newJ" type="date" class="inp"><button class="btn" onclick="addJ()">Tambah</button></div>
-    <div class="flex flex-wrap gap-2">${s.jadwal.slice().sort().map(d=>`<span class="bd bg-emerald-50 text-emerald-700 text-xs">${fd(d)} <button onclick="delJ('${d}')" class="ml-1 text-rose-500">×</button></span>`).join('')||'<span class="text-xs text-slate-400">Belum ada jadwal.</span>'}</div></div>
+    <div class="flex flex-wrap gap-2">${(s.jadwal||[]).slice().sort().map(d=>`<span class="bd bg-emerald-50 text-emerald-700 text-xs">${fd(d)} <button onclick="delJ('${d}')" class="ml-1 text-rose-500">×</button></span>`).join('')||'<span class="text-xs text-slate-400">Belum ada jadwal.</span>'}</div></div>
   ${cardS('Template undangan',[['formatUndangan','Format nomor ({COUNTER} {YEAR} {MONTH})'],['counterUndangan','Counter berikutnya','number'],['tplUndangan','ID Google Docs / Slides template']])}
   ${cardS('Template sertifikat',[['formatSertifikat','Format nomor ({COUNTER} {YEAR} {MONTH})'],['counterSertifikat','Counter berikutnya','number'],['tplSertifikat','ID Google Docs / Slides template']])}
   ${cardS('Post test',[['kkm','KKM','number'],['waktuTes','Waktu mengerjakan (menit)','number']])}
@@ -304,8 +304,8 @@ function renderSet(){const s=S.ad.settings;
 const saveSet=ks=>run(async()=>{const o={};ks.split(',').forEach(k=>{const v=$('s_'+k).value;o[k]=['kkm','waktuTes','counterUndangan','counterSertifikat'].includes(k)?Number(v):v.trim()});
   S.ad.settings=await adm('saveSettings',o);S.info.s.namaKua=S.ad.settings.namaKua;$('kua').textContent=S.ad.settings.namaKua;renderSet();toast('Pengaturan disimpan')});
 const setJ=j=>run(async()=>{S.ad.settings=await adm('saveSettings',{jadwal:j});renderSet()});
-const addJ=()=>{const d=$('newJ').value;if(d&&!S.ad.settings.jadwal.includes(d))setJ([...S.ad.settings.jadwal,d])};
-const delJ=d=>setJ(S.ad.settings.jadwal.filter(x=>x!=d));
+const addJ=()=>{const d=$('newJ').value;if(d&&!(S.ad.settings.jadwal||[]).includes(d))setJ([...(S.ad.settings.jadwal||[]),d])};
+const delJ=d=>setJ((S.ad.settings.jadwal||[]).filter(x=>x!=d));
 </script>
 </body>
 </html>
