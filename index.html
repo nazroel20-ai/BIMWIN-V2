@@ -16,7 +16,7 @@
 :root[data-theme="dark"]{color-scheme:dark}
 :root[data-theme="dark"] body{background:#0b1220;color:#e2e8f0}
 :root[data-theme="dark"] header{background:rgba(15,23,42,.92) !important;border-color:#1e293b !important}
-:root[data-theme="dark"] .bg-white{background-color:#111c30 !important}
+:root[data-theme="dark"] .bg-white,:root[data-theme="dark"] .card{background-color:#111c30 !important}
 :root[data-theme="dark"] .bg-slate-50{background-color:#0b1220 !important}
 :root[data-theme="dark"] .bg-slate-100{background-color:#1e293b !important}
 :root[data-theme="dark"] .bg-slate-200{background-color:#334155 !important}
@@ -112,7 +112,16 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
     </div>
     <div id="t_mon" class="space-y-3">
       <div class="card grid grid-cols-2 md:grid-cols-6 gap-2">
-        <select id="fA" class="inp" onchange="renderMon(1)"></select><select id="fB" class="inp" onchange="renderMon(1)"></select>
+        <div id="fAkadWrap" class="relative">
+          <button type="button" id="fAkadBtn" onclick="toggleAkadPanel()" class="inp text-left flex justify-between items-center gap-2"><span id="fAkadLabel" class="truncate">Semua tanggal akad</span><i class="fa-solid fa-chevron-down text-xs shrink-0"></i></button>
+          <div id="fAkadPanel" class="hidden absolute z-30 mt-1 w-72 max-w-[90vw] bg-white border border-slate-200 rounded-xl shadow-lg p-2">
+            <input id="fAkadSearch" class="inp mb-2" placeholder="Cari tanggal akad..." oninput="renderAkadOptions()">
+            <div id="fAkadOptions" class="space-y-0.5 text-sm max-h-56 overflow-auto"></div>
+            <div class="flex justify-between pt-2 mt-1 border-t border-slate-100"><button class="btn2" onclick="clearAkad()">Bersihkan</button><button class="btn2" onclick="toggleAkadPanel()">Selesai</button></div>
+          </div>
+        </div>
+        <input id="fB" list="dlBimwin" class="inp" placeholder="Semua tanggal bimbingan (ketik untuk cari)" oninput="renderMon(1)">
+        <datalist id="dlBimwin"></datalist>
         <select id="fS" class="inp" onchange="renderMon(1)"><option value="">Semua status tes</option><option value="0">Belum mengerjakan semua</option><option value="1">Lulus satu</option><option value="2">Lulus semua</option></select>
         <button class="btn2" onclick="resetMon()">Reset filter</button><button class="btn col-span-2" onclick="exp()"><i class="fa-solid fa-file-excel mr-1"></i>Export Excel</button>
       </div>
@@ -152,11 +161,12 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
   <div class="flex justify-between text-white mb-2"><b id="vTitle" class="truncate"></b><button onclick="closeV()"><i class="fa-solid fa-xmark text-xl"></i></button></div>
   <iframe id="vFrame" class="flex-1 w-full bg-white rounded-xl"></iframe>
 </div>
-<div id="exam" class="fixed inset-0 z-[60] bg-white text-slate-800 hidden flex-col p-4 sm:p-8 overflow-y-auto">
+<div id="exam" class="fixed inset-0 z-[60] bg-white text-slate-800 hidden p-4 sm:p-8 overflow-y-auto">
   <div class="flex justify-between items-center border-b border-slate-200 pb-3 max-w-3xl mx-auto w-full">
     <div><b>Post test Bimwin</b><p id="exWho" class="text-xs text-slate-500"></p></div>
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2">
       <button id="exNavBtn" onclick="toggleExNav()" class="btn2" title="Daftar nomor soal"><i class="fa-solid fa-list-check mr-1"></i>Daftar soal</button>
+      <button onclick="toggleTheme()" title="Ganti mode gelap/terang" class="w-9 h-9 rounded-xl btn2 !px-0"><i id="exThIcon" class="fa-solid fa-moon"></i></button>
       <div class="text-right"><div id="exTime" class="text-2xl font-bold tabular-nums text-amber-600">00:00</div><p class="text-[10px] text-slate-500">Jangan menutup atau menyegarkan halaman</p></div>
     </div>
   </div>
@@ -164,11 +174,11 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
     <p class="text-xs text-slate-500 mb-2">Klik nomor untuk langsung menuju soal itu. <span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-500 align-middle ml-1"></span> terjawab · <span class="inline-block w-2.5 h-2.5 rounded-sm bg-slate-300 align-middle ml-1"></span> belum</p>
     <div id="exNavGrid" class="grid grid-cols-8 sm:grid-cols-10 gap-1.5"></div>
   </div>
-  <div class="max-w-3xl mx-auto w-full flex-1 py-6 space-y-4">
+  <div class="max-w-3xl mx-auto w-full py-6 space-y-4">
     <p id="exNo" class="text-xs text-slate-500"></p><h3 id="exQ" class="text-lg font-semibold"></h3><div id="exOpts" class="space-y-2"></div>
-  </div>
-  <div class="max-w-3xl mx-auto w-full flex justify-between">
-    <button id="exPrev" class="btn2" onclick="nav(-1)">Sebelumnya</button><button id="exNext" class="btn" onclick="nav(1)">Berikutnya</button><button id="exSend" class="btn hidden" onclick="sendExam()">Kirim jawaban</button>
+    <div class="flex justify-between pt-2">
+      <button id="exPrev" class="btn2" onclick="nav(-1)">Sebelumnya</button><button id="exNext" class="btn" onclick="nav(1)">Berikutnya</button><button id="exSend" class="btn hidden" onclick="sendExam()">Kirim jawaban</button>
+    </div>
   </div>
 </div>
 <div id="toasts" class="fixed bottom-4 right-4 z-[70] space-y-2"></div>
@@ -282,9 +292,10 @@ async function showVerify(k){
 /* ---------- init ---------- */
 function applyTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem('bw_theme',t)}catch(e){}
   const i=$('thIcon');if(i)i.className='fa-solid '+(t=='dark'?'fa-sun':'fa-moon')}
-function toggleTheme(){applyTheme(document.documentElement.dataset.theme=='dark'?'light':'dark')}
+function toggleTheme(){applyTheme(document.documentElement.dataset.theme=='dark'?'light':'dark');syncExTheme()}
+function syncExTheme(){const dk=document.documentElement.dataset.theme=='dark',i=$('exThIcon');if(i)i.className='fa-solid '+(dk?'fa-sun':'fa-moon')}
 (function(){let t;try{t=localStorage.getItem('bw_theme')}catch(e){}
-  if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  if(!t)t='light'; // default mode terang; abaikan preferensi sistem
   document.documentElement.dataset.theme=t})();
 document.addEventListener('DOMContentLoaded',()=>{applyTheme(document.documentElement.dataset.theme);boot()});
 
@@ -366,7 +377,7 @@ function editProfil(){const c=S.u;
 /* ---------- peserta: post test ---------- */
 const startExam=()=>run(async()=>{
   const r=await api('startTes',{nik:S.u.me.nik});S.ex={q:r.soal,i:0,a:{},left:r.menit*60,sent:0};
-  $('exWho').textContent=S.u.me.nama;$('exam').classList.replace('hidden','flex');window.onbeforeunload=()=>true;tick();qShow();
+  $('exWho').textContent=S.u.me.nama;$('exam').classList.remove('hidden');syncExTheme();window.onbeforeunload=()=>true;tick();qShow();
   S.ex.tm=setInterval(()=>{S.ex.left--;tick();if(S.ex.left<=0)sendExam()},1000)});
 function tick(){const l=Math.max(0,S.ex.left);$('exTime').textContent=String(Math.floor(l/60)).padStart(2,'0')+':'+String(l%60).padStart(2,'0')}
 function qShow(){const x=S.ex,q=x.q[x.i];$('exNo').textContent=`Soal ${x.i+1} dari ${x.q.length} · ${q.kategori}`;$('exQ').textContent=q.teks;
@@ -382,7 +393,7 @@ function renderExNav(){const x=S.ex;$('exNavGrid').innerHTML=x.q.map((q,i)=>{con
 async function sendExam(){
   const x=S.ex;if(x.sent)return;x.sent=1;clearInterval(x.tm);busy($('exSend'),1);
   try{const r=await api('submitTes',{nik:S.u.me.nik,jawaban:x.a});setUser(r.c);toast(`Nilai tes ini: ${r.last}`,r.last<S.info.s.kkm)}catch(e){toast(e.message,1)}
-  window.onbeforeunload=null;S.ex=null;busy($('exSend'),0);touch();$('exam').classList.replace('flex','hidden');dash()}
+  window.onbeforeunload=null;S.ex=null;busy($('exSend'),0);touch();$('exam').classList.add('hidden');dash()}
 
 /* ---------- modal generik ---------- */
 function closeM(){$('modal').classList.replace('flex','hidden')}
@@ -395,17 +406,30 @@ function form(t,fs,v,save,ro){
 
 /* ---------- admin ---------- */
 async function loadAdmin(){S.ad=await adm('adminData');const a=S.ad;
-  fillSel('fA',a.couples.map(c=>c.tglAkad),'Semua tanggal akad',fd);fillSel('fB',a.couples.map(c=>c.tglBimwin),'Semua tanggal bimbingan',fd);
+  fillBimList();
   fillSel('sK',a.soal.map(s=>s.kategori),'Semua kategori');fillSel('ak',a.materi.map(m=>m.kategori),'Semua kategori');
   renderMon();renderSoal();renderAMat(1);renderSet();$('admLoad').classList.add('hidden');if(!window.__t)atab('mon')}
 function fillSel(id,v,all,f=x=>x){const e=$(id),cur=e.value;e.innerHTML=`<option value="">${all}</option>`+[...new Set(v)].filter(Boolean).sort().map(x=>`<option value="${esc(x)}">${esc(f(x))}</option>`).join('');e.value=cur}
 function atab(t){window.__t=t;['mon','soal','mat','set'].forEach(x=>{$('t_'+x).classList.toggle('hidden',x!=t);$('b_'+x).className='tab '+(x==t?'bg-indigo-600 text-white':'text-slate-600 bg-white')})}
-const monList=()=>S.ad.couples.filter(c=>(!$('fA').value||c.tglAkad==$('fA').value)&&(!$('fB').value||c.tglBimwin==$('fB').value)&&($('fS').value===''||st(c)==$('fS').value));
+let fAkadSet=new Set();
+function fillBimList(){const dates=[...new Set(S.ad.couples.map(c=>c.tglBimwin))].filter(Boolean).sort();
+  $('dlBimwin').innerHTML=dates.map(d=>`<option value="${d}">${fd(d)}</option>`).join('')}
+function toggleAkadPanel(){const p=$('fAkadPanel');p.classList.toggle('hidden');if(!p.classList.contains('hidden')){$('fAkadSearch').value='';renderAkadOptions();$('fAkadSearch').focus()}}
+function renderAkadOptions(){const q=$('fAkadSearch').value.toLowerCase();
+  const dates=[...new Set(S.ad.couples.map(c=>c.tglAkad))].filter(Boolean).sort();
+  const L=dates.filter(d=>fd(d).toLowerCase().includes(q)||d.includes(q));
+  $('fAkadOptions').innerHTML=L.map(d=>`<label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" ${fAkadSet.has(d)?'checked':''} onchange="toggleAkadDate('${d}')">${fd(d)}</label>`).join('')||'<p class="text-xs text-slate-400 px-2 py-1">Tidak ada tanggal cocok</p>'}
+function toggleAkadDate(d){fAkadSet.has(d)?fAkadSet.delete(d):fAkadSet.add(d);updateAkadLabel();renderMon(1)}
+function updateAkadLabel(){$('fAkadLabel').textContent=fAkadSet.size?`${fAkadSet.size} tanggal akad dipilih`:'Semua tanggal akad'}
+function clearAkad(){fAkadSet.clear();updateAkadLabel();renderAkadOptions();renderMon(1)}
+document.addEventListener('click',e=>{if($('fAkadWrap')&&!e.target.closest('#fAkadWrap'))$('fAkadPanel').classList.add('hidden')});
+function bimMatch(c){const v=$('fB').value.trim().toLowerCase();if(!v)return true;return c.tglBimwin===v||fd(c.tglBimwin).toLowerCase().includes(v)}
+const monList=()=>S.ad.couples.filter(c=>(!fAkadSet.size||fAkadSet.has(c.tglAkad))&&bimMatch(c)&&($('fS').value===''||st(c)==$('fS').value));
 function renderMon(p){const L=monList(),n=Math.max(1,Math.ceil(L.length/10));S.mnp=Math.min(p||S.mnp||1,n);$('monBody').innerHTML=L.slice((S.mnp-1)*10,S.mnp*10).map(c=>{const s=st(c);
   return `<tr><td><b>${esc(c.namaPria)} &amp; ${esc(c.namaWanita)}</b><br><span class="text-[10px] text-slate-400">${c.id}</span></td><td>${fd(c.tglBimwin)}</td>
   <td><span class="bd ${['bg-slate-200 text-slate-600','bg-amber-100 text-amber-700','bg-emerald-100 text-emerald-700'][s]}">${['Belum lulus','Lulus satu','Lulus semua'][s]}</span></td>
   <td class="whitespace-nowrap"><label class="mr-2 text-xs"><input type="checkbox" ${c.hadir?'checked':''} onchange="hadir('${c.id}',this.checked)"> Hadir luring</label><button class="btn2" onclick="detail('${c.id}')">Detail</button></td></tr>`}).join('')||'<tr><td colspan="4" class="text-slate-400">Tidak ada data.</td></tr>';$('monPg').innerHTML=pager(S.mnp,n,'renderMon')}
-function resetMon(){['fA','fB','fS'].forEach(i=>$(i).value='');renderMon(1)}
+function resetMon(){fAkadSet.clear();updateAkadLabel();$('fB').value='';$('fS').value='';renderMon(1)}
 const hadir=(id,v)=>{const cb=event.target;cb.disabled=true;run(async()=>{try{await adm('setHadir',{id,val:v});S.ad.couples.find(c=>c.id==id).hadir=v;toast(v?'Kehadiran dikonfirmasi':'Konfirmasi dibatalkan')}catch(e){cb.checked=!v;throw e}finally{cb.disabled=false}})};
 function detail(id){const c=S.ad.couples.find(x=>x.id==id),col=(t,k,cl)=>{const T=k=='P'?c.tesP:c.tesW,N=k=='P'?'Pria':'Wanita';return `<div class="rounded-xl p-3 ${cl} text-sm space-y-1"><b>Catin ${N}</b><p>${esc(c['nama'+N])}</p><p>NIK ${esc(c['nik'+N])}</p><p>WA ${esc(c['wa'+N])}</p><p>${esc(c['alamat'+N])}</p><p>Post test: <b>${T.score}</b> (${T.pass?'Lulus':'Belum lulus'})</p></div>`};
   showM('Detail peserta '+c.id,`<div class="grid md:grid-cols-2 gap-3">${col(0,'P','bg-blue-50')}${col(0,'W','bg-rose-50')}</div><p class="text-xs text-slate-500">Bimwin ${fd(c.tglBimwin)} · Akad ${fd(c.tglAkad)}</p>
