@@ -3,13 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PORTAL BIMWIN</title>
+<title>SIM-BIMWIN KUA</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta name="color-scheme" content="light dark">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer onload="window.gis&&gis()"></script>
-<script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','sans-serif']}}}}</script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','sans-serif']}}}}</script>
+<style>
+/* ---------- Mode gelap ---------- */
+:root[data-theme="dark"]{color-scheme:dark}
+:root[data-theme="dark"] body{background:#0b1220;color:#e2e8f0}
+:root[data-theme="dark"] header{background:rgba(15,23,42,.92) !important;border-color:#1e293b !important}
+:root[data-theme="dark"] .bg-white{background-color:#111c30 !important}
+:root[data-theme="dark"] .bg-slate-50{background-color:#0b1220 !important}
+:root[data-theme="dark"] .bg-slate-100{background-color:#1e293b !important}
+:root[data-theme="dark"] .bg-slate-200{background-color:#334155 !important}
+:root[data-theme="dark"] .hover\:bg-slate-200:hover{background-color:#334155 !important}
+:root[data-theme="dark"] .border-slate-100,:root[data-theme="dark"] .border-slate-200,:root[data-theme="dark"] .border{border-color:#243044 !important}
+:root[data-theme="dark"] .text-slate-400{color:#94a3b8 !important}
+:root[data-theme="dark"] .text-slate-500{color:#a3adc2 !important}
+:root[data-theme="dark"] .text-slate-600{color:#cbd5e1 !important}
+:root[data-theme="dark"] .text-slate-700{color:#e2e8f0 !important}
+:root[data-theme="dark"] .text-slate-800{color:#f1f5f9 !important}
+:root[data-theme="dark"] .bg-blue-50{background-color:#0f2743 !important}
+:root[data-theme="dark"] .bg-rose-50{background-color:#3a1420 !important}
+:root[data-theme="dark"] .bg-amber-50{background-color:#3a2c0d !important}
+:root[data-theme="dark"] .bg-amber-100{background-color:#453410 !important}
+:root[data-theme="dark"] .bg-emerald-50{background-color:#0c2c22 !important}
+:root[data-theme="dark"] .bg-emerald-100{background-color:#0f3a2b !important}
+:root[data-theme="dark"] .bg-indigo-50{background-color:#1a2044 !important}
+:root[data-theme="dark"] .border-amber-200{border-color:#5c4614 !important}
+:root[data-theme="dark"] .border-emerald-200{border-color:#125e42 !important}
+:root[data-theme="dark"] .text-amber-700,:root[data-theme="dark"] .text-amber-800{color:#fbbf24 !important}
+:root[data-theme="dark"] .text-emerald-700,:root[data-theme="dark"] .text-emerald-800{color:#34d399 !important}
+:root[data-theme="dark"] .text-rose-600,:root[data-theme="dark"] .text-rose-700{color:#fb7185 !important}
+:root[data-theme="dark"] .text-blue-600{color:#60a5fa !important}
+:root[data-theme="dark"] .text-indigo-600,:root[data-theme="dark"] .text-indigo-700{color:#818cf8 !important}
+:root[data-theme="dark"] .inp{background-color:#0b1220 !important;border-color:#243044 !important;color:#e2e8f0 !important}
+:root[data-theme="dark"] .inp::placeholder{color:#64748b}
+:root[data-theme="dark"] th{background-color:#0f1a2e !important}
+:root[data-theme="dark"] td{border-color:#1e293b !important}
+:root[data-theme="dark"] .btn2{background-color:#1e293b !important;color:#e2e8f0 !important}
+:root[data-theme="dark"] .btn2:hover{background-color:#334155 !important}
+:root[data-theme="dark"] .btn2:disabled{opacity:.4}
+:root[data-theme="dark"] #modal .bg-white,:root[data-theme="dark"] #exam{background-color:#0b1220 !important}
+#exam,#exam *{transition:background-color .15s,color .15s,border-color .15s}
+:root[data-theme="dark"] .exOptOff{background-color:#0f1a2e !important;border-color:#243044 !important;color:#e2e8f0 !important}
+:root[data-theme="dark"] code{background-color:#1a2044 !important;color:#a5b4fc !important}
+:root[data-theme="dark"] #exNav{background-color:#0f1a2e !important;border-color:#243044 !important}
+</style>
 <style type="text/tailwindcss">
 .card{@apply bg-white rounded-2xl shadow-sm border border-slate-200 p-5}
 .inp{@apply w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500}
@@ -27,7 +71,7 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
     <div class="w-10 h-10 shrink-0 rounded-xl bg-emerald-600 text-white flex items-center justify-center"><i class="fa-solid fa-hands-holding-child"></i></div>
     <div class="min-w-0"><h1 id="kua" class="font-bold leading-tight truncate">SIM-BIMWIN</h1><p class="text-xs text-slate-500 truncate">Sistem Bimbingan Perkawinan</p></div>
   </div>
-  <div class="flex items-center gap-2 shrink-0"><button id="rf" onclick="refreshData()" title="Muat ulang data" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600"><i class="fa-solid fa-rotate"></i></button>
+  <div class="flex items-center gap-2 shrink-0"><button id="rf" onclick="refreshData()" title="Muat ulang data" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600"><i class="fa-solid fa-rotate"></i></button><button id="thBtn" onclick="toggleTheme()" title="Ganti mode gelap/terang" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600"><i id="thIcon" class="fa-solid fa-moon"></i></button>
   <div id="tg" class="bg-slate-100 p-1 rounded-xl flex text-xs shrink-0">
     <button id="rP" onclick="setRole('P')" class="tab">Peserta</button>
     <button id="rA" onclick="setRole('A')" class="tab hidden"><i class="fa-solid fa-user-shield mr-1"></i>Admin</button>
@@ -61,9 +105,10 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
   </div>
   <div id="adm" class="hidden">
     <div id="admLoad" class="text-center py-6 text-slate-400"><i class="fa-solid fa-circle-notch fa-spin text-xl"></i></div>
-    <div class="flex gap-2 overflow-x-auto pb-2">
+    <div class="flex gap-2 overflow-x-auto pb-2 items-center">
       <button id="b_mon" onclick="atab('mon')" class="tab">Monitoring</button><button id="b_soal" onclick="atab('soal')" class="tab">Bank soal</button>
       <button id="b_mat" onclick="atab('mat')" class="tab">Materi</button><button id="b_set" onclick="atab('set')" class="tab">Pengaturan</button>
+      <button onclick="adminLogout()" class="tab text-rose-600 ml-auto shrink-0"><i class="fa-solid fa-right-from-bracket mr-1"></i>Keluar</button>
     </div>
     <div id="t_mon" class="space-y-3">
       <div class="card grid grid-cols-2 md:grid-cols-6 gap-2">
@@ -107,13 +152,20 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
   <div class="flex justify-between text-white mb-2"><b id="vTitle" class="truncate"></b><button onclick="closeV()"><i class="fa-solid fa-xmark text-xl"></i></button></div>
   <iframe id="vFrame" class="flex-1 w-full bg-white rounded-xl"></iframe>
 </div>
-<div id="exam" class="fixed inset-0 z-[60] bg-slate-900 text-white hidden flex-col p-4 sm:p-8 overflow-y-auto">
-  <div class="flex justify-between items-center border-b border-slate-700 pb-3 max-w-3xl mx-auto w-full">
-    <div><b>Post test Bimwin</b><p id="exWho" class="text-xs text-slate-400"></p></div>
-    <div class="text-right"><div id="exTime" class="text-2xl font-bold tabular-nums text-amber-400">00:00</div><p class="text-[10px] text-slate-400">Jangan menutup atau menyegarkan halaman</p></div>
+<div id="exam" class="fixed inset-0 z-[60] bg-white text-slate-800 hidden flex-col p-4 sm:p-8 overflow-y-auto">
+  <div class="flex justify-between items-center border-b border-slate-200 pb-3 max-w-3xl mx-auto w-full">
+    <div><b>Post test Bimwin</b><p id="exWho" class="text-xs text-slate-500"></p></div>
+    <div class="flex items-center gap-3">
+      <button id="exNavBtn" onclick="toggleExNav()" class="btn2" title="Daftar nomor soal"><i class="fa-solid fa-list-check mr-1"></i>Daftar soal</button>
+      <div class="text-right"><div id="exTime" class="text-2xl font-bold tabular-nums text-amber-600">00:00</div><p class="text-[10px] text-slate-500">Jangan menutup atau menyegarkan halaman</p></div>
+    </div>
+  </div>
+  <div id="exNav" class="hidden max-w-3xl mx-auto w-full mt-3 p-3 rounded-2xl border border-slate-200 bg-slate-50">
+    <p class="text-xs text-slate-500 mb-2">Klik nomor untuk langsung menuju soal itu. <span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-500 align-middle ml-1"></span> terjawab · <span class="inline-block w-2.5 h-2.5 rounded-sm bg-slate-300 align-middle ml-1"></span> belum</p>
+    <div id="exNavGrid" class="grid grid-cols-8 sm:grid-cols-10 gap-1.5"></div>
   </div>
   <div class="max-w-3xl mx-auto w-full flex-1 py-6 space-y-4">
-    <p id="exNo" class="text-xs text-slate-400"></p><h3 id="exQ" class="text-lg font-semibold"></h3><div id="exOpts" class="space-y-2"></div>
+    <p id="exNo" class="text-xs text-slate-500"></p><h3 id="exQ" class="text-lg font-semibold"></h3><div id="exOpts" class="space-y-2"></div>
   </div>
   <div class="max-w-3xl mx-auto w-full flex justify-between">
     <button id="exPrev" class="btn2" onclick="nav(-1)">Sebelumnya</button><button id="exNext" class="btn" onclick="nav(1)">Berikutnya</button><button id="exSend" class="btn hidden" onclick="sendExam()">Kirim jawaban</button>
@@ -158,6 +210,7 @@ const pager=(p,n,fn)=>`<button class="btn2" ${p<=1?'disabled':''} onclick="${fn}
 function setRole(r){
   $('P').classList.toggle('hidden',r!='P');$('A').classList.toggle('hidden',r!='A');
   $('rP').className='tab '+(r=='P'?'bg-white shadow-sm':'text-slate-500');$('rA').className='tab '+(r=='A'?'bg-white shadow-sm text-indigo-700':'text-slate-500')+(S.showA?'':' hidden');
+  $('tg').classList.toggle('hidden',r=='A'&&!!S.tok); // setelah admin masuk dashboard, tombol beralih ke peserta disembunyikan
   if(r=='A'){$('gate').classList.toggle('hidden',!!S.tok);$('adm').classList.toggle('hidden',!S.tok);
     if(!S.tok){gis();const g=$('gBtn');
       if(CLIENT_ID.startsWith('GANTI'))g.innerHTML='<p class="text-xs text-rose-600">CLIENT_ID belum diisi di index.html</p>';
@@ -177,6 +230,7 @@ async function onCred(r){
 function adminOut(idle){
   S.tok=null;S.ad=null;sessionStorage.removeItem('bw_a');try{google.accounts.id.disableAutoSelect()}catch(e){}
   setRole('A');if(idle)toast('Sesi admin berakhir: tidak ada aktivitas selama 5 menit',1)}
+function adminLogout(){if(!confirm('Keluar dari mode admin?'))return;localStorage.removeItem('bw_adm');S.showA=false;adminOut(false);setRole('P')}
 const jwtExp=t=>{try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp}catch(e){return 0}};
 
 /* ---------- muat ulang data (tanpa hard refresh) ---------- */
@@ -190,8 +244,8 @@ const refreshData=()=>run(async()=>{
 const IDLE=5*60*1000;let act=Date.now();
 function touch(){act=Date.now();try{sessionStorage.setItem('bw_t',act)}catch(e){}}
 ['click','keydown','touchstart','scroll','mousemove'].forEach(ev=>addEventListener(ev,()=>{if(Date.now()-act>1500)touch()},{passive:true}));
-setInterval(()=>{if(S.ex||Date.now()-act<IDLE)return;
-  if(S.u){logout();toast('Sesi berakhir: tidak ada aktivitas selama 5 menit',1)}else if(S.tok)adminOut(true)},15000);
+setInterval(()=>{if(S.ex||S.tok||Date.now()-act<IDLE)return; // admin tidak kena batas idle 5 menit
+  if(S.u){logout();toast('Sesi berakhir: tidak ada aktivitas selama 5 menit',1)}},15000);
 async function boot(){
   const q=new URLSearchParams(location.search);
   if(q.get('v'))return showVerify(q.get('v'));
@@ -226,7 +280,13 @@ async function showVerify(k){
 }
 
 /* ---------- init ---------- */
-document.addEventListener('DOMContentLoaded',boot);
+function applyTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem('bw_theme',t)}catch(e){}
+  const i=$('thIcon');if(i)i.className='fa-solid '+(t=='dark'?'fa-sun':'fa-moon')}
+function toggleTheme(){applyTheme(document.documentElement.dataset.theme=='dark'?'light':'dark')}
+(function(){let t;try{t=localStorage.getItem('bw_theme')}catch(e){}
+  if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  document.documentElement.dataset.theme=t})();
+document.addEventListener('DOMContentLoaded',()=>{applyTheme(document.documentElement.dataset.theme);boot()});
 
 /* ---------- peserta: auth ---------- */
 function setAuth(m){const l=m=='l';$('fL').classList.toggle('hidden',!l);$('fR').classList.toggle('hidden',l);$('regRes').classList.add('hidden');if(l&&S.regDone){$('lNik').value='';S.regDone=0}if(!l&&S.regDone){buildReg();fillBim()}
@@ -279,9 +339,10 @@ function dash(){
     <div id="mGrid" class="p-4 grid grid-cols-2 md:grid-cols-4 gap-3"></div><div id="mPg" class="flex justify-center items-center gap-2 pb-4"></div></div>`;
   const ks=[...new Set(S.info.materi.map(m=>m.kategori))].sort();
   $('mKat').innerHTML='<option value="">Semua jenis materi</option>'+ks.map(k=>`<option>${esc(k)}</option>`).join('');renderMateri(1)}
-const coverColor=()=>(S.info.s.materiCoverColor||S.ad?.settings?.materiCoverColor||'#059669');
+const defCoverColor=()=>(S.ad?.settings?.materiCoverColor||S.info.s.materiCoverColor||'#059669');
+const coverColor=m=>(m&&m.warna)||defCoverColor();
 const card=(m,act)=>`<div class="aspect-[3/4] bg-white border rounded-2xl p-2 flex flex-col gap-2 shadow-sm">
-  <div class="flex-1 rounded-xl text-white flex flex-col items-center justify-center text-center p-3 gap-2" style="background:${coverColor()}">
+  <div class="flex-1 rounded-xl text-white flex flex-col items-center justify-center text-center p-3 gap-2" style="background:${coverColor(m)}">
     <i class="fa-solid fa-file-pdf text-2xl opacity-90"></i><h4 class="text-xs font-bold line-clamp-4 leading-snug">${esc(m.judul)}</h4>
     <p class="text-[10px] opacity-80 line-clamp-1">${esc(m.kategori)}</p></div>
   <p class="text-[10px] text-slate-400 truncate px-1">${esc(m.pengarang)||'&nbsp;'}</p>
@@ -309,10 +370,15 @@ const startExam=()=>run(async()=>{
   S.ex.tm=setInterval(()=>{S.ex.left--;tick();if(S.ex.left<=0)sendExam()},1000)});
 function tick(){const l=Math.max(0,S.ex.left);$('exTime').textContent=String(Math.floor(l/60)).padStart(2,'0')+':'+String(l%60).padStart(2,'0')}
 function qShow(){const x=S.ex,q=x.q[x.i];$('exNo').textContent=`Soal ${x.i+1} dari ${x.q.length} · ${q.kategori}`;$('exQ').textContent=q.teks;
-  $('exOpts').innerHTML=['A','B','C','D'].map(k=>`<button onclick="pick('${k}')" class="w-full text-left p-4 rounded-2xl border text-sm ${x.a[q.id]==k?'bg-emerald-600 border-emerald-500':'bg-slate-800 border-slate-700 hover:bg-slate-700'}"><b class="mr-2">${k}.</b>${esc(q.opts[k])}</button>`).join('');
-  const last=x.i==x.q.length-1;$('exPrev').disabled=x.i==0;$('exNext').classList.toggle('hidden',last);$('exSend').classList.toggle('hidden',!last)}
+  $('exOpts').innerHTML=['A','B','C','D'].map(k=>`<button onclick="pick('${k}')" class="w-full text-left p-4 rounded-2xl border text-sm ${x.a[q.id]==k?'bg-emerald-600 border-emerald-500 text-white':'exOptOff bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-800'}"><b class="mr-2">${k}.</b>${esc(q.opts[k])}</button>`).join('');
+  const last=x.i==x.q.length-1;$('exPrev').disabled=x.i==0;$('exNext').classList.toggle('hidden',last);$('exSend').classList.toggle('hidden',!last);
+  renderExNav()}
 function pick(k){S.ex.a[S.ex.q[S.ex.i].id]=k;qShow()}
-function nav(d){S.ex.i+=d;qShow()}
+function nav(d){S.ex.i+=d;$('exNav').classList.add('hidden');qShow()}
+function jumpTo(i){S.ex.i=i;$('exNav').classList.add('hidden');qShow()}
+function toggleExNav(){$('exNav').classList.toggle('hidden')}
+function renderExNav(){const x=S.ex;$('exNavGrid').innerHTML=x.q.map((q,i)=>{const done=x.a[q.id]!=null,cur=i==x.i;
+  return `<button onclick="jumpTo(${i})" class="h-9 rounded-lg text-xs font-bold ${cur?'ring-2 ring-indigo-500 ':''}${done?'bg-emerald-500 text-white':'bg-slate-200 text-slate-600'}">${i+1}</button>`}).join('')}
 async function sendExam(){
   const x=S.ex;if(x.sent)return;x.sent=1;clearInterval(x.tm);busy($('exSend'),1);
   try{const r=await api('submitTes',{nik:S.u.me.nik,jawaban:x.a});setUser(r.c);toast(`Nilai tes ini: ${r.last}`,r.last<S.info.s.kkm)}catch(e){toast(e.message,1)}
@@ -365,10 +431,16 @@ function formSoal(id,ro){
     txt('kategori','Kategori / tema (mis. Fikih)')+sel('jenis','Jenis soal',JN)+sel('peruntukan','Peruntukan',PN)+txt('pembuat','Pembuat soal')+
     `<div><label class="text-xs font-semibold">Pertanyaan</label><textarea id="f_teks" rows="3" class="inp" ${d}>${esc(s.teks)}</textarea></div>
     <div><div class="flex justify-between text-xs font-semibold"><span>Pilihan jawaban</span><span id="hOpt" class="text-slate-500 font-normal"></span></div><div class="space-y-2 mt-1">`+
-    ['A','B','C','D'].map((k,i)=>`<div class="flex items-center gap-2"><b class="w-5 shrink-0">${k}</b><input id="f_opt${k}" class="inp flex-1 min-w-0" value="${esc(s['opt'+k])}" ${d}><label class="kk flex items-center gap-1 text-xs whitespace-nowrap shrink-0"><input type="radio" name="kunci" value="${k}" ${s.kunci==k?'checked':''} ${d}>Kunci</label><input id="f_sk${k}" type="number" min="0" max="100" placeholder="Nilai" class="inp sk w-16 shrink-0 text-center" value="${esc(sk[i]??'')}" ${d}></div>`).join('')+'</div></div>');
+    ['A','B','C','D'].map((k,i)=>`<div class="grid items-center gap-2" style="grid-template-columns:1.75rem 1fr 5rem">
+      <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">${k}</span>
+      <input id="f_opt${k}" class="inp" placeholder="Teks pilihan ${k}" value="${esc(s['opt'+k])}" ${d}>
+      <div class="flex justify-center">
+        <label class="kk flex items-center gap-1 text-xs whitespace-nowrap"><input type="radio" name="kunci" value="${k}" ${s.kunci==k?'checked':''} ${d}>Kunci</label>
+        <input id="f_sk${k}" type="number" min="0" max="100" placeholder="0" title="Bobot skor 0-100" class="inp sk w-full text-center" value="${esc(sk[i]??'')}" ${d}>
+      </div></div>`).join('')+'</div></div>');
   const sync=()=>{const b=$('f_jenis').value==JN[1];
     document.querySelectorAll('.kk').forEach(e=>e.classList.toggle('hidden',b));document.querySelectorAll('.sk').forEach(e=>e.classList.toggle('hidden',!b));
-    $('hOpt').textContent=b?'Isi nilai 0–100 di samping setiap pilihan':'Pilih satu kunci jawaban'};
+    $('hOpt').textContent=b?'Isi bobot skor 0–100 di kotak kanan tiap pilihan':'Pilih satu kunci jawaban di kanan tiap pilihan'};
   $('f_jenis').onchange=sync;sync();
   $('mSave').classList.toggle('hidden',!!ro);
   $('mSave').onclick=()=>run(async()=>{
@@ -389,14 +461,16 @@ function renderAMat(p){S.amp=p||S.amp;const q=$('aq').value.toLowerCase(),k=$('a
 function fileToB64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f)})}
 function formMateri(id,ro){const m=S.ad.materi.find(x=>x.id==id)||{};const d=ro?'disabled':'';
   const f=(k,l,ty)=>`<div><label class="text-xs font-semibold">${l}</label><input id="f_${k}" class="inp" ${ty?'type="'+ty+'"':''} value="${esc(m[k])}" ${d}></div>`;
+  const wc=m.warna||defCoverColor();
   showM(id?(ro?'Detail materi':'Edit materi'):'Tambah materi',
     f('judul','Judul materi')+f('kategori','Kategori / tema')+f('pengarang','Pengarang')+
+    `<div><label class="text-xs font-semibold">Warna sampul materi ini</label><div class="flex items-center gap-3 mt-1"><input id="f_warna" type="color" value="${wc}" class="h-11 w-16 rounded-lg border cursor-pointer" ${d} oninput="$('f_wPrev').style.background=this.value"><span id="f_wPrev" class="px-3 py-2 rounded-lg text-white text-xs font-bold" style="background:${wc}">Contoh sampul</span></div></div>` +
     `<div><label class="text-xs font-semibold">File PDF${m.pdfFileId?' (kosongkan jika tidak diganti)':''}</label>
       ${d?(m.pdfUrl?`<a href="${pv(m.pdfUrl)}" target="_blank" class="btn2 inline-block">Buka file saat ini</a>`:'<p class="text-xs text-slate-400">Belum ada file</p>'):`<input id="f_pdf" type="file" accept="application/pdf" class="inp" ${d}><p id="f_pdfName" class="text-xs text-slate-500 mt-1">${m.pdfFileId?'File saat ini tersimpan. Pilih file baru untuk mengganti.':''}</p>`}</div>`);
   $('mSave').classList.toggle('hidden',!!ro);
   if(id&&!ro)$('mBody').insertAdjacentHTML('beforeend',`<button class="btn2 text-rose-600" onclick="delMat('${id}')">Hapus materi ini</button>`);
   $('mSave').onclick=()=>run(async()=>{
-    const v=k=>$('f_'+k).value.trim(),o={id:m.id,judul:v('judul'),kategori:v('kategori'),pengarang:v('pengarang')};
+    const v=k=>$('f_'+k).value.trim(),o={id:m.id,judul:v('judul'),kategori:v('kategori'),pengarang:v('pengarang'),warna:v('warna')};
     if(!o.judul||!o.kategori)throw new Error('Judul dan kategori wajib diisi');
     const file=$('f_pdf').files[0];
     if(file){if(file.size>10*1024*1024)throw new Error('Ukuran PDF maksimal 10 MB');o.pdfBase64=await fileToB64(file);o.pdfName=file.name}
@@ -408,13 +482,13 @@ const delMat=id=>confirm('Hapus materi ini?')&&run(async()=>{await adm('delMater
 function renderSet(){const s=S.ad.settings;
   const cardS=(t,fs,extra='')=>`<div class="card space-y-3"><h3 class="font-bold">${t}</h3>${fs.map(([k,l,ty])=>`<div><label class="text-xs font-semibold">${l}</label><input id="s_${k}" type="${ty||'text'}" value="${esc(s[k])}" class="inp"></div>`).join('')}${extra}<button class="btn" onclick="saveSet('${fs.map(f=>f[0]).join(',')}')">Simpan</button></div>`;
   $('t_set').innerHTML=`<div class="grid md:grid-cols-2 gap-4">
+  <div class="card space-y-3"><h3 class="font-bold">Tampilan materi</h3><p class="text-xs text-slate-500 -mt-1">Warna bawaan untuk materi baru. Tiap materi bisa diberi warna sendiri saat ditambah/diedit.</p><div><label class="text-xs font-semibold">Warna sampul bawaan</label><div class="flex items-center gap-3 mt-1"><input id="s_materiCoverColor" type="color" value="${s.materiCoverColor||'#059669'}" class="h-11 w-16 rounded-lg border cursor-pointer" oninput="$('cvPrev').style.background=this.value"><span id="cvPrev" class="px-3 py-2 rounded-lg text-white text-xs font-bold" style="background:${s.materiCoverColor||'#059669'}">Contoh sampul</span></div><p class="text-xs text-slate-500 mt-1">Berlaku untuk tampilan peserta &amp; admin.</p></div><button class="btn" onclick="saveSet('materiCoverColor')">Simpan warna bawaan</button></div>
   ${cardS('Profil instansi',[['namaKua','Nama KUA'],['alamatKua','Alamat KUA'],['kepalaKua','Nama kepala'],['nipKepala','NIP kepala']])}
   <div class="card space-y-3"><h3 class="font-bold">Jadwal Bimwin yang tersedia</h3><div class="flex gap-2"><input id="newJ" type="date" class="inp"><button class="btn" onclick="addJ()">Tambah</button></div>
     <div class="flex flex-wrap gap-2">${(s.jadwal||[]).slice().sort().map(d=>`<span class="bd bg-emerald-50 text-emerald-700 text-xs">${fd(d)} <button onclick="delJ('${d}')" class="ml-1 text-rose-500">×</button></span>`).join('')||'<span class="text-xs text-slate-400">Belum ada jadwal.</span>'}</div></div>
   ${cardS('Template undangan',[['formatUndangan','Format nomor ({COUNTER} {YEAR} {MONTH} {BULAN_ROMAWI})'],['counterUndangan','Counter berikutnya','number'],['tplUndangan','ID Google Docs / Slides template']])}
   ${cardS('Template sertifikat',[['formatSertifikat','Format nomor ({COUNTER} {YEAR} {MONTH} {BULAN_ROMAWI})'],['counterSertifikat','Counter berikutnya','number'],['tplSertifikat','ID Google Docs / Slides template'],['urlAplikasi','URL aplikasi untuk QR verifikasi']])}
-  ${cardS('Post test',[['kkm','KKM','number'],['waktuTes','Waktu mengerjakan (menit)','number']])}
-  <div class="card space-y-3"><h3 class="font-bold">Tampilan materi</h3><div><label class="text-xs font-semibold">Warna sampul kotak materi</label><div class="flex items-center gap-2 mt-1"><input id="s_materiCoverColor" type="color" value="${s.materiCoverColor||'#059669'}" class="h-10 w-14 rounded-lg border"><span class="text-xs text-slate-500">Berlaku untuk peserta &amp; admin</span></div></div><button class="btn" onclick="saveSet('materiCoverColor')">Simpan</button></div>
+${cardS('Post test',[['kkm','KKM','number'],['waktuTes','Waktu mengerjakan (menit)','number']])}
   <div class="card space-y-2"><h3 class="font-bold">Placeholder untuk template</h3><p class="text-xs text-slate-500">Tulis persis di dokumen/slide, termasuk kurung kurawal. Counter undangan dan sertifikat berjalan terpisah. Untuk QR sertifikat, letakkan {QR_CODE} sendirian di satu kotak/paragraf pada template.</p><div class="flex flex-wrap gap-1">${PH.map(p=>`<code class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[11px]">{${p}}</code>`).join('')}</div></div></div>`}
 const saveSet=ks=>run(async()=>{const o={};ks.split(',').forEach(k=>{const v=$('s_'+k).value;o[k]=['kkm','waktuTes','counterUndangan','counterSertifikat'].includes(k)?Number(v):v.trim()});
   S.ad.settings=await adm('saveSettings',o);S.info.s.namaKua=S.ad.settings.namaKua;$('kua').textContent=S.ad.settings.namaKua;S.info.s.materiCoverColor=S.ad.settings.materiCoverColor;renderSet();renderAMat(S.amp);toast('Pengaturan disimpan')});
