@@ -112,18 +112,19 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
     </div>
     <div id="t_mon" class="space-y-3">
       <div class="card grid grid-cols-2 md:grid-cols-6 gap-2">
-        <div id="fAkadWrap" class="relative">
-          <button type="button" id="fAkadBtn" onclick="toggleAkadPanel()" class="inp text-left flex justify-between items-center gap-2"><span id="fAkadLabel" class="truncate">Semua tanggal akad</span><i class="fa-solid fa-chevron-down text-xs shrink-0"></i></button>
-          <div id="fAkadPanel" class="hidden absolute z-30 mt-1 w-72 max-w-[90vw] bg-white border border-slate-200 rounded-xl shadow-lg p-2">
-            <input id="fAkadSearch" class="inp mb-2" placeholder="Cari tanggal akad..." oninput="renderAkadOptions()">
-            <div id="fAkadOptions" class="space-y-0.5 text-sm max-h-56 overflow-auto"></div>
-            <div class="flex justify-between pt-2 mt-1 border-t border-slate-100"><button class="btn2" onclick="clearAkad()">Bersihkan</button><button class="btn2" onclick="toggleAkadPanel()">Selesai</button></div>
+        <div id="fBimWrap" class="relative">
+          <button type="button" id="fBimBtn" onclick="toggleBimPanel()" class="inp text-left flex justify-between items-center gap-2"><span id="fBimLabel" class="truncate">Semua tanggal bimbingan</span><i class="fa-solid fa-chevron-down text-xs shrink-0"></i></button>
+          <div id="fBimPanel" class="hidden absolute z-30 mt-1 w-72 max-w-[90vw] bg-white border border-slate-200 rounded-xl shadow-lg p-2">
+            <input id="fBimSearch" class="inp mb-2" placeholder="Cari tanggal bimbingan..." oninput="renderBimOptions()">
+            <div id="fBimOptions" class="space-y-0.5 text-sm max-h-56 overflow-auto"></div>
+            <div class="flex justify-between pt-2 mt-1 border-t border-slate-100"><button class="btn2" onclick="clearBim()">Bersihkan</button><button class="btn2" onclick="toggleBimPanel()">Selesai</button></div>
           </div>
         </div>
-        <input id="fB" list="dlBimwin" class="inp" placeholder="Semua tanggal bimbingan (ketik untuk cari)" oninput="renderMon(1)">
-        <datalist id="dlBimwin"></datalist>
+        <input id="fBimAwal" type="date" class="inp" onchange="renderMon(1)" title="Tanggal bimbingan dari">
+        <input id="fBimAkhir" type="date" class="inp" onchange="renderMon(1)" title="Tanggal bimbingan sampai">
         <select id="fS" class="inp" onchange="renderMon(1)"><option value="">Semua status tes</option><option value="0">Belum mengerjakan semua</option><option value="1">Lulus satu</option><option value="2">Lulus semua</option></select>
-        <button class="btn2" onclick="resetMon()">Reset filter</button><button class="btn col-span-2" onclick="exp()"><i class="fa-solid fa-file-excel mr-1"></i>Export Excel</button>
+        <button class="btn2 w-10 !px-0 mx-auto" title="Reset filter" onclick="resetMon()"><i class="fa-solid fa-rotate-left"></i></button>
+        <button class="btn w-10 !px-0 mx-auto" title="Export Excel" onclick="exp()"><i class="fa-solid fa-file-excel"></i></button>
       </div>
       <div class="card p-0 overflow-auto max-h-[62vh]"><table class="w-full min-w-[640px]"><thead><tr><th>Catin pria &amp; wanita</th><th>Tgl bimbingan</th><th>Status post test</th><th>Aksi</th></tr></thead><tbody id="monBody"></tbody></table></div><div id="monPg" class="flex justify-center items-center gap-2"></div>
     </div>
@@ -411,25 +412,29 @@ async function loadAdmin(){S.ad=await adm('adminData');const a=S.ad;
   renderMon();renderSoal();renderAMat(1);renderSet();$('admLoad').classList.add('hidden');if(!window.__t)atab('mon')}
 function fillSel(id,v,all,f=x=>x){const e=$(id),cur=e.value;e.innerHTML=`<option value="">${all}</option>`+[...new Set(v)].filter(Boolean).sort().map(x=>`<option value="${esc(x)}">${esc(f(x))}</option>`).join('');e.value=cur}
 function atab(t){window.__t=t;['mon','soal','mat','set'].forEach(x=>{$('t_'+x).classList.toggle('hidden',x!=t);$('b_'+x).className='tab '+(x==t?'bg-indigo-600 text-white':'text-slate-600 bg-white')})}
-let fAkadSet=new Set();
-function fillBimList(){const dates=[...new Set(S.ad.couples.map(c=>c.tglBimwin))].filter(Boolean).sort();
-  $('dlBimwin').innerHTML=dates.map(d=>`<option value="${d}">${fd(d)}</option>`).join('')}
-function toggleAkadPanel(){const p=$('fAkadPanel');p.classList.toggle('hidden');if(!p.classList.contains('hidden')){$('fAkadSearch').value='';renderAkadOptions();$('fAkadSearch').focus()}}
-function renderAkadOptions(){const q=$('fAkadSearch').value.toLowerCase();
-  const dates=[...new Set(S.ad.couples.map(c=>c.tglAkad))].filter(Boolean).sort();
+let fBimVal='';
+function fillBimList(){} // sudah tidak dipakai, dibiarkan agar pemanggilan lama tidak error
+function toggleBimPanel(){const p=$('fBimPanel');p.classList.toggle('hidden');if(!p.classList.contains('hidden')){$('fBimSearch').value='';renderBimOptions();$('fBimSearch').focus()}}
+function renderBimOptions(){const q=$('fBimSearch').value.toLowerCase();
+  const dates=[...new Set(S.ad.couples.map(c=>c.tglBimwin))].filter(Boolean).sort();
   const L=dates.filter(d=>fd(d).toLowerCase().includes(q)||d.includes(q));
-  $('fAkadOptions').innerHTML=L.map(d=>`<label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="checkbox" ${fAkadSet.has(d)?'checked':''} onchange="toggleAkadDate('${d}')">${fd(d)}</label>`).join('')||'<p class="text-xs text-slate-400 px-2 py-1">Tidak ada tanggal cocok</p>'}
-function toggleAkadDate(d){fAkadSet.has(d)?fAkadSet.delete(d):fAkadSet.add(d);updateAkadLabel();renderMon(1)}
-function updateAkadLabel(){$('fAkadLabel').textContent=fAkadSet.size?`${fAkadSet.size} tanggal akad dipilih`:'Semua tanggal akad'}
-function clearAkad(){fAkadSet.clear();updateAkadLabel();renderAkadOptions();renderMon(1)}
-document.addEventListener('click',e=>{if($('fAkadWrap')&&!e.target.closest('#fAkadWrap'))$('fAkadPanel').classList.add('hidden')});
-function bimMatch(c){const v=$('fB').value.trim().toLowerCase();if(!v)return true;return c.tglBimwin===v||fd(c.tglBimwin).toLowerCase().includes(v)}
-const monList=()=>S.ad.couples.filter(c=>(!fAkadSet.size||fAkadSet.has(c.tglAkad))&&bimMatch(c)&&($('fS').value===''||st(c)==$('fS').value));
+  $('fBimOptions').innerHTML=L.map(d=>`<label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"><input type="radio" name="fBimRadio" ${fBimVal==d?'checked':''} onchange="pickBim('${d}')">${fd(d)}</label>`).join('')||'<p class="text-xs text-slate-400 px-2 py-1">Tidak ada tanggal cocok</p>'}
+function pickBim(d){fBimVal=d;updateBimLabel();toggleBimPanel();renderMon(1)}
+function updateBimLabel(){$('fBimLabel').textContent=fBimVal?fd(fBimVal):'Semua tanggal bimbingan'}
+function clearBim(){fBimVal='';updateBimLabel();renderBimOptions();renderMon(1)}
+document.addEventListener('click',e=>{if($('fBimWrap')&&!e.target.closest('#fBimWrap'))$('fBimPanel').classList.add('hidden')});
+function bimMatch(c){
+  if(fBimVal&&c.tglBimwin!==fBimVal)return false;
+  const a=$('fBimAwal').value,b=$('fBimAkhir').value;
+  if(a&&c.tglBimwin<a)return false;
+  if(b&&c.tglBimwin>b)return false;
+  return true}
+const monList=()=>S.ad.couples.filter(c=>bimMatch(c)&&($('fS').value===''||st(c)==$('fS').value));
 function renderMon(p){const L=monList(),n=Math.max(1,Math.ceil(L.length/10));S.mnp=Math.min(p||S.mnp||1,n);$('monBody').innerHTML=L.slice((S.mnp-1)*10,S.mnp*10).map(c=>{const s=st(c);
   return `<tr><td><b>${esc(c.namaPria)} &amp; ${esc(c.namaWanita)}</b><br><span class="text-[10px] text-slate-400">${c.id}</span></td><td>${fd(c.tglBimwin)}</td>
   <td><span class="bd ${['bg-slate-200 text-slate-600','bg-amber-100 text-amber-700','bg-emerald-100 text-emerald-700'][s]}">${['Belum lulus','Lulus satu','Lulus semua'][s]}</span></td>
   <td class="whitespace-nowrap"><label class="mr-2 text-xs"><input type="checkbox" ${c.hadir?'checked':''} onchange="hadir('${c.id}',this.checked)"> Hadir luring</label><button class="btn2" onclick="detail('${c.id}')">Detail</button></td></tr>`}).join('')||'<tr><td colspan="4" class="text-slate-400">Tidak ada data.</td></tr>';$('monPg').innerHTML=pager(S.mnp,n,'renderMon')}
-function resetMon(){fAkadSet.clear();updateAkadLabel();$('fB').value='';$('fS').value='';renderMon(1)}
+function resetMon(){fBimVal='';updateBimLabel();$('fBimAwal').value='';$('fBimAkhir').value='';$('fS').value='';renderMon(1)}
 const hadir=(id,v)=>{const cb=event.target;cb.disabled=true;run(async()=>{try{await adm('setHadir',{id,val:v});S.ad.couples.find(c=>c.id==id).hadir=v;toast(v?'Kehadiran dikonfirmasi':'Konfirmasi dibatalkan')}catch(e){cb.checked=!v;throw e}finally{cb.disabled=false}})};
 function detail(id){const c=S.ad.couples.find(x=>x.id==id),col=(t,k,cl)=>{const T=k=='P'?c.tesP:c.tesW,N=k=='P'?'Pria':'Wanita';return `<div class="rounded-xl p-3 ${cl} text-sm space-y-1"><b>Catin ${N}</b><p>${esc(c['nama'+N])}</p><p>NIK ${esc(c['nik'+N])}</p><p>WA ${esc(c['wa'+N])}</p><p>${esc(c['alamat'+N])}</p><p>Post test: <b>${T.score}</b> (${T.pass?'Lulus':'Belum lulus'})</p></div>`};
   showM('Detail peserta '+c.id,`<div class="grid md:grid-cols-2 gap-3">${col(0,'P','bg-blue-50')}${col(0,'W','bg-rose-50')}</div><p class="text-xs text-slate-500">Bimwin ${fd(c.tglBimwin)} · Akad ${fd(c.tglAkad)}</p>
