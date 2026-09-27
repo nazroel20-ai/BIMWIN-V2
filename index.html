@@ -71,7 +71,7 @@ td{@apply px-3 py-2 text-sm border-t border-slate-100 align-top}
     <div class="w-10 h-10 shrink-0 rounded-xl bg-emerald-600 text-white flex items-center justify-center"><i class="fa-solid fa-hands-holding-child"></i></div>
     <div class="min-w-0"><h1 id="kua" class="font-bold leading-tight truncate">SIM-BIMWIN</h1><p class="text-xs text-slate-500 truncate">Sistem Bimbingan Perkawinan</p></div>
   </div>
-  <div class="flex items-center gap-2 shrink-0"><button id="rf" onclick="refreshData()" title="Muat ulang data" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600"><i class="fa-solid fa-rotate"></i></button><button id="thBtn" onclick="toggleTheme()" title="Ganti mode gelap/terang" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600"><i id="thIcon" class="fa-solid fa-moon"></i></button>
+  <div class="flex items-center gap-2 shrink-0"><a id="waContactBtn" href="#" target="_blank" rel="noopener" title="Hubungi Admin via WhatsApp" class="hidden w-9 h-9 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 items-center justify-center"><i class="fa-brands fa-whatsapp text-lg"></i></a><button id="rf" onclick="refreshData()" title="Muat ulang data" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600"><i class="fa-solid fa-rotate"></i></button><button id="thBtn" onclick="toggleTheme()" title="Ganti mode gelap/terang" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600"><i id="thIcon" class="fa-solid fa-moon"></i></button>
   <div id="tg" class="bg-slate-100 p-1 rounded-xl flex text-xs shrink-0">
     <button id="rP" onclick="setRole('P')" class="tab">Peserta</button>
     <button id="rA" onclick="setRole('A')" class="tab hidden"><i class="fa-solid fa-user-shield mr-1"></i>Admin</button>
@@ -211,7 +211,7 @@ function busy(b,on){
 }
 const run=async f=>{const b=curBtn;busy(b,1);try{return await f()}catch(e){toast(e.message,1)}finally{busy(b,0)}};
 function setUser(u){S.u=u;try{sessionStorage.setItem('bw_uv',JSON.stringify(u));sessionStorage.setItem('bw_u',u.me.nik)}catch(e){}}
-async function loadInfo(){S.info=await api('info');try{localStorage.setItem('bw_info',JSON.stringify(S.info))}catch(e){}$('kua').textContent=S.info.s.namaKua;fillBim();if(!$('P').classList.contains('hidden')&&S.u)renderMateri(S.mp)}
+async function loadInfo(){S.info=await api('info');try{localStorage.setItem('bw_info',JSON.stringify(S.info))}catch(e){}$('kua').textContent=S.info.s.namaKua;fillBim();updateWaBtn();if(!$('P').classList.contains('hidden')&&S.u)renderMateri(S.mp)}
 function toast(m,e){const d=document.createElement('div');d.className='px-4 py-2 rounded-xl text-white text-xs font-semibold shadow-lg '+(e?'bg-rose-600':'bg-emerald-600');d.textContent=m;$('toasts').append(d);setTimeout(()=>d.remove(),3800)}
 const b64=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:'application/pdf'})};
 const pv=u=>{const m=/\/file\/d\/([^/]+)/.exec(u||'');return m?`https://drive.google.com/file/d/${m[1]}/preview`:u};
@@ -227,7 +227,12 @@ function setRole(r){
       if(CLIENT_ID.startsWith('GANTI'))g.innerHTML='<p class="text-xs text-rose-600">CLIENT_ID belum diisi di index.html</p>';
       else if(gisReady){g.innerHTML='';google.accounts.id.renderButton(g,{theme:'outline',size:'large'})}
       else{g.innerHTML='<p class="text-xs text-slate-500">Memuat Google Sign-In... klik Admin lagi dalam beberapa detik. Jika tetap gagal, matikan ad-blocker.</p>';setTimeout(()=>{if(!S.tok&&!$('A').classList.contains('hidden'))setRole('A')},2500)}}}
+  updateWaBtn();
 }
+function updateWaBtn(){const el=$('waContactBtn');if(!el)return;
+  const showIt=!$('P').classList.contains('hidden'),num=(S.info.s.waAdmin||'').replace(/\D/g,'');
+  if(showIt&&num){const n=num.startsWith('0')?'62'+num.slice(1):(num.startsWith('62')?num:'62'+num);el.href='https://wa.me/'+n;el.classList.remove('hidden');el.classList.add('flex')}
+  else{el.classList.add('hidden');el.classList.remove('flex')}}
 let gisReady=0;
 function gis(){
   if(gisReady||!window.google||!google.accounts||CLIENT_ID.startsWith('GANTI'))return;
@@ -372,7 +377,7 @@ function editProfil(){const c=S.u;
   form('Edit profil & tanggal Bimwin',[['nama','Nama'],['wa','No. WhatsApp','tel'],['alamat','Alamat'],['tglBimwin','Tanggal Bimwin (sebelum akad)','select',bimOpts(c.tglAkad,c.tglBimwin)]],
     {nama:c.me.nama,wa:c.me.wa,alamat:c.me.alamat,tglBimwin:c.tglBimwin},
     async o=>{setUser(await api('updateProfil',{...o,nik:c.me.nik}));dash();closeM();toast('Profil diperbarui')});
-  $('mBody').insertAdjacentHTML('afterbegin',`<div class="rounded-xl bg-slate-50 p-3 text-xs text-slate-500"><b>Tanggal akad nikah:</b> ${fd(c.tglAkad)}. Perubahan tanggal akad hanya bisa dilakukan oleh admin KUA, silakan hubungi admin bila perlu diubah.</div>`)}
+  $('mBody').insertAdjacentHTML('afterbegin',`<div><label class="text-xs font-semibold">Tanggal akad nikah</label><div class="inp bg-slate-100 text-slate-400 flex items-center justify-between gap-2 cursor-not-allowed select-none"><span>${fd(c.tglAkad)}</span><i class="fa-solid fa-lock text-xs"></i></div><p class="text-[11px] text-slate-500 mt-1">Hanya admin KUA yang bisa mengubah tanggal akad. Silakan hubungi admin bila perlu diubah.</p></div>`)}
 
 /* ---------- peserta: post test ---------- */
 const startExam=()=>run(async()=>{
@@ -399,10 +404,13 @@ async function sendExam(){
 function closeM(){$('modal').classList.replace('flex','hidden')}
 function showM(t,h){$('mTitle').textContent=t;$('mBody').innerHTML=h;$('modal').classList.replace('hidden','flex')}
 function form(t,fs,v,save,ro){
-  showM(t,fs.map(([k,l,ty,o])=>{const a=`id="f_${k}" class="inp" ${ro?'disabled':''}`;
-    return `<div><label class="text-xs font-semibold">${l}</label>`+(ty=='select'?`<select ${a}>${o.map(x=>{const[ov,ol]=Array.isArray(x)?x:[x,x];return `<option value="${esc(ov)}" ${ov==v[k]?'selected':''}>${esc(ol)}</option>`}).join('')}</select>`:ty=='textarea'?`<textarea rows="3" ${a}>${esc(v[k])}</textarea>`:`<input type="${ty||'text'}" value="${esc(v[k])}" ${a}>`)+'</div>'}).join(''));
+  const d=ro?'disabled':'';
+  showM(t,fs.map(([k,l,ty,o])=>{const a=`id="f_${k}" class="inp" ${d}`;
+    return `<div><label class="text-xs font-semibold">${l}</label>`+(ty=='select'?`<select ${a}>${o.map(x=>{const[ov,ol]=Array.isArray(x)?x:[x,x];return `<option value="${esc(ov)}" ${ov==v[k]?'selected':''}>${esc(ol)}</option>`}).join('')}</select>`:ty=='textarea'?`<textarea rows="3" ${a}>${esc(v[k])}</textarea>`:ty=='date'?`<div class="relative"><input id="f_${k}_disp" class="inp pr-9 cursor-pointer" readonly placeholder="Pilih tanggal" value="${v[k]?fd(v[k]):''}" onclick="openDateField('${k}')" ${d}><input id="f_${k}" type="date" value="${esc(v[k])}" class="absolute inset-0 opacity-0 pointer-events-none" ${d}><i class="fa-solid fa-calendar-days text-slate-400 text-sm absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i></div>`:`<input type="${ty||'text'}" value="${esc(v[k])}" ${a}>`)+'</div>'}).join(''));
+  fs.forEach(([k,l,ty])=>{if(ty=='date')$('f_'+k).onchange=function(){$('f_'+k+'_disp').value=this.value?fd(this.value):''}});
   $('mSave').classList.toggle('hidden',!!ro);
   $('mSave').onclick=()=>run(async()=>{const o={...v};fs.forEach(([k])=>o[k]=$('f_'+k).value);await save(o)})}
+function openDateField(k){const el=$('f_'+k);if(el.disabled)return;if(el.showPicker)try{el.showPicker()}catch(e){el.focus()}else el.focus()}
 
 /* ---------- admin ---------- */
 async function loadAdmin(){S.ad=await adm('adminData');const a=S.ad;
@@ -442,7 +450,7 @@ function editJadwal(id){const c=S.ad.couples.find(x=>x.id==id);
   form('Edit tanggal akad & Bimwin '+c.id,[['tglAkad','Tanggal akad nikah','date'],['tglBimwin','Tanggal Bimwin','select',[...new Set([...S.ad.settings.jadwal,c.tglBimwin])].filter(d=>d&&d<c.tglAkad).sort().map(d=>[d,fd(d)])]],
     {tglAkad:c.tglAkad,tglBimwin:c.tglBimwin},
     async o=>{await adm('updateJadwal',{id,...o});await loadAdmin();closeM();toast('Tanggal diperbarui')});
-  $('f_tglAkad').onchange=()=>{const cur=$('f_tglBimwin').value,ak=$('f_tglAkad').value;
+  $('f_tglAkad').onchange=function(){$('f_tglAkad_disp').value=this.value?fd(this.value):'';const cur=$('f_tglBimwin').value,ak=this.value;
     $('f_tglBimwin').innerHTML='<option value="">Pilih tanggal</option>'+[...new Set([...S.ad.settings.jadwal,cur])].filter(d=>d&&ak&&d<ak).sort().map(d=>`<option value="${d}" ${d==cur?'selected':''}>${fd(d)}</option>`).join('')}}
 async function openDoc(id,j){const b=curBtn,w=window.open('','_blank');busy(b,1);try{const d=await adm('dokumenAdmin',{id,jenis:j});w.location=URL.createObjectURL(b64(d.b64))}catch(e){w.close();toast(e.message,1)}finally{busy(b,0)}}
 function exp(){const r=monList().map(c=>({ID:c.id,'Nama Pria':c.namaPria,'NIK Pria':c.nikPria,'WA Pria':c.waPria,'Nama Wanita':c.namaWanita,'NIK Wanita':c.nikWanita,'WA Wanita':c.waWanita,'Tgl Akad':c.tglAkad,'Tgl Bimwin':c.tglBimwin,'Hadir luring':c.hadir?'Ya':'Belum','Nilai Pria':c.tesP.score,'Nilai Wanita':c.tesW.score,Status:['Belum lulus','Lulus satu','Lulus semua'][st(c)]}));
@@ -517,7 +525,7 @@ function renderSet(){const s=S.ad.settings;
   const cardS=(t,fs,extra='')=>`<div class="card space-y-3"><h3 class="font-bold">${t}</h3>${fs.map(([k,l,ty])=>`<div><label class="text-xs font-semibold">${l}</label><input id="s_${k}" type="${ty||'text'}" value="${esc(s[k])}" class="inp"></div>`).join('')}${extra}<button class="btn" onclick="saveSet('${fs.map(f=>f[0]).join(',')}')">Simpan</button></div>`;
   $('t_set').innerHTML=`<div class="grid md:grid-cols-2 gap-4">
   <div class="card space-y-3"><h3 class="font-bold">Tampilan materi</h3><p class="text-xs text-slate-500 -mt-1">Warna bawaan untuk materi baru. Tiap materi bisa diberi warna sendiri saat ditambah/diedit.</p><div><label class="text-xs font-semibold">Warna sampul bawaan</label><div class="flex items-center gap-3 mt-1"><input id="s_materiCoverColor" type="color" value="${s.materiCoverColor||'#059669'}" class="h-11 w-16 rounded-lg border cursor-pointer" oninput="$('cvPrev').style.background=this.value"><span id="cvPrev" class="px-3 py-2 rounded-lg text-white text-xs font-bold" style="background:${s.materiCoverColor||'#059669'}">Contoh sampul</span></div><p class="text-xs text-slate-500 mt-1">Berlaku untuk tampilan peserta &amp; admin.</p></div><button class="btn" onclick="saveSet('materiCoverColor')">Simpan warna bawaan</button></div>
-  ${cardS('Profil instansi',[['namaKua','Nama KUA'],['alamatKua','Alamat KUA'],['kepalaKua','Nama kepala'],['nipKepala','NIP kepala']])}
+  ${cardS('Profil instansi',[['namaKua','Nama KUA'],['alamatKua','Alamat KUA'],['kepalaKua','Nama kepala'],['nipKepala','NIP kepala'],['waAdmin','No. WhatsApp Admin (kontak peserta)','tel']])}
   <div class="card space-y-3"><h3 class="font-bold">Jadwal Bimwin yang tersedia</h3><div class="flex gap-2"><input id="newJ" type="date" class="inp"><button class="btn" onclick="addJ()">Tambah</button></div>
     <div class="flex flex-wrap gap-2">${(s.jadwal||[]).slice().sort().map(d=>`<span class="bd bg-emerald-50 text-emerald-700 text-xs">${fd(d)} <button onclick="delJ('${d}')" class="ml-1 text-rose-500">×</button></span>`).join('')||'<span class="text-xs text-slate-400">Belum ada jadwal.</span>'}</div></div>
   ${cardS('Template undangan',[['formatUndangan','Format nomor ({COUNTER} {YEAR} {MONTH} {BULAN_ROMAWI})'],['counterUndangan','Counter berikutnya','number'],['tplUndangan','ID Google Docs / Slides template']])}
