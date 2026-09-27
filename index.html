@@ -52,6 +52,8 @@
 #exam,#exam *{transition:background-color .15s,color .15s,border-color .15s}
 :root[data-theme="dark"] .exOptOff{background-color:#0f1a2e !important;border-color:#243044 !important;color:#e2e8f0 !important}
 :root[data-theme="dark"] code{background-color:#1a2044 !important;color:#a5b4fc !important}
+input[type="date"]{position:relative}
+input[type="date"]::-webkit-calendar-picker-indicator{position:absolute;right:0;top:0;width:2.5rem;height:100%;opacity:0;cursor:pointer;margin:0;padding:0}
 :root[data-theme="dark"] #exNav{background-color:#0f1a2e !important;border-color:#243044 !important}
 </style>
 <style type="text/tailwindcss">
@@ -359,9 +361,11 @@ function dash(){
 const defCoverColor=()=>(S.ad?.settings?.materiCoverColor||S.info.s.materiCoverColor||'#059669');
 const coverColor=m=>(m&&m.warna)||defCoverColor();
 const card=(m,act)=>`<div class="aspect-[3/4] bg-white border rounded-2xl p-2 flex flex-col gap-2 shadow-sm">
-  <div class="flex-1 rounded-xl text-white flex flex-col items-center justify-center text-center p-3 gap-2" style="background:${coverColor(m)}">
+  ${m.tipe=='video'?
+    `<div class="flex-1 rounded-xl text-white flex flex-col items-center justify-center text-center gap-2 relative overflow-hidden bg-slate-800 bg-cover bg-center" style="background-image:url('https://img.youtube.com/vi/${m.videoId}/hqdefault.jpg')"><div class="absolute inset-0 bg-black/40"></div><i class="fa-solid fa-circle-play text-3xl relative z-10 drop-shadow"></i><h4 class="text-xs font-bold line-clamp-3 leading-snug relative z-10 px-2 drop-shadow">${esc(m.judul)}</h4></div>`
+   :`<div class="flex-1 rounded-xl text-white flex flex-col items-center justify-center text-center p-3 gap-2" style="background:${coverColor(m)}">
     <i class="fa-solid fa-file-pdf text-2xl opacity-90"></i><h4 class="text-xs font-bold line-clamp-4 leading-snug">${esc(m.judul)}</h4>
-    <p class="text-[10px] opacity-80 line-clamp-1">${esc(m.kategori)}</p></div>
+    <p class="text-[10px] opacity-80 line-clamp-1">${esc(m.kategori)}</p></div>`}
   <p class="text-[10px] text-slate-400 truncate px-1">${esc(m.pengarang)||'&nbsp;'}</p>
   <div class="flex gap-1">${act}</div></div>`;
 function renderMateri(p){
@@ -369,7 +373,7 @@ function renderMateri(p){
   const L=S.info.materi.filter(m=>(!k||m.kategori==k)&&m.judul.toLowerCase().includes(q)),n=Math.max(1,Math.ceil(L.length/8));S.mp=Math.min(S.mp,n);
   g.innerHTML=L.slice((S.mp-1)*8,S.mp*8).map(m=>card(m,`<button class="btn2 flex-1" onclick="prev('${m.id}')">Buka</button>`)).join('')||'<p class="text-sm text-slate-400 col-span-full">Belum ada materi.</p>';
   $('mPg').innerHTML=pager(S.mp,n,'renderMateri')}
-function prev(id){const m=[...S.info.materi,...(S.ad?S.ad.materi:[])].find(x=>x.id==id);$('vTitle').textContent=m.judul;$('vFrame').src=pv(m.pdfUrl);$('viewer').classList.replace('hidden','flex')}
+function prev(id){const m=[...S.info.materi,...(S.ad?S.ad.materi:[])].find(x=>x.id==id);$('vTitle').textContent=m.judul;$('vFrame').src=m.tipe=='video'?`https://www.youtube.com/embed/${m.videoId}`:pv(m.pdfUrl);$('viewer').classList.replace('hidden','flex')}
 function closeV(){$('vFrame').src='';$('viewer').classList.replace('flex','hidden')}
 const dl=j=>run(async()=>{toast('Menyiapkan dokumen...');const d=await api('dokumen',{nik:S.u.me.nik,jenis:j});const a=document.createElement('a');a.href=URL.createObjectURL(b64(d.b64));a.download=d.filename;a.click()});
 const bimOpts=(ak,cur)=>[...new Set([...S.info.s.jadwal,cur])].filter(d=>d&&ak&&d<ak).sort().map(d=>[d,fd(d)]);
@@ -504,29 +508,35 @@ function fileToB64(f){return new Promise((res,rej)=>{const r=new FileReader();r.
 function formMateri(id,ro){const m=S.ad.materi.find(x=>x.id==id)||{};const d=ro?'disabled':'';
   const f=(k,l,ty)=>`<div><label class="text-xs font-semibold">${l}</label><input id="f_${k}" class="inp" ${ty?'type="'+ty+'"':''} value="${esc(m[k])}" ${d}></div>`;
   const wc=m.warna||defCoverColor();
+  const isVid=m.tipe=='video';
   showM(id?(ro?'Detail materi':'Edit materi'):'Tambah materi',
     f('judul','Judul materi')+f('kategori','Kategori / tema')+f('pengarang','Pengarang')+
     `<div><label class="text-xs font-semibold">Warna sampul materi ini</label><div class="flex items-center gap-3 mt-1"><input id="f_warna" type="color" value="${wc}" class="h-11 w-16 rounded-lg border cursor-pointer" ${d} oninput="$('f_wPrev').style.background=this.value"><span id="f_wPrev" class="px-3 py-2 rounded-lg text-white text-xs font-bold" style="background:${wc}">Contoh sampul</span></div></div>` +
-    `<div><label class="text-xs font-semibold">File PDF${m.pdfFileId?' (kosongkan jika tidak diganti)':''}</label>
-      ${d?(m.pdfUrl?`<a href="${pv(m.pdfUrl)}" target="_blank" class="btn2 inline-block">Buka file saat ini</a>`:'<p class="text-xs text-slate-400">Belum ada file</p>'):`<input id="f_pdf" type="file" accept="application/pdf" class="inp" ${d}><p id="f_pdfName" class="text-xs text-slate-500 mt-1">${m.pdfFileId?'File saat ini tersimpan. Pilih file baru untuk mengganti.':''}</p>`}</div>`);
+    `<div><label class="text-xs font-semibold">Jenis materi</label><select id="f_tipe" class="inp" ${d} onchange="syncMatTipe()"><option value="pdf" ${!isVid?'selected':''}>File PDF</option><option value="video" ${isVid?'selected':''}>Video YouTube</option></select></div>`+
+    `<div id="secPdf"><label class="text-xs font-semibold">File PDF${m.pdfUrl?' (kosongkan jika tidak diganti)':''}</label>
+      ${m.pdfUrl?`<p class="text-xs mb-1"><a href="${pv(m.pdfUrl)}" target="_blank" class="text-emerald-600 underline">Lihat file PDF saat ini</a></p>`:''}
+      ${d?(m.pdfUrl?'':'<p class="text-xs text-slate-400">Belum ada file</p>'):`<input id="f_pdf" type="file" accept="application/pdf" class="inp" ${d}><p class="text-xs text-slate-500 mt-1">${m.pdfUrl?'Kosongkan jika tidak ingin mengganti file.':'Maks. 10 MB.'}</p>`}</div>`+
+    `<div id="secVid" class="hidden"><label class="text-xs font-semibold">Link video YouTube</label><input id="f_videoUrl" class="inp" placeholder="https://www.youtube.com/watch?v=..." value="${isVid?'https://youtu.be/'+m.videoId:''}" ${d}><p class="text-xs text-slate-500 mt-1">Tempel tautan video YouTube (biasa, youtu.be, atau shorts).</p></div>`);
+  syncMatTipe();
   $('mSave').classList.toggle('hidden',!!ro);
   if(id&&!ro)$('mBody').insertAdjacentHTML('beforeend',`<button class="btn2 text-rose-600" onclick="delMat('${id}')">Hapus materi ini</button>`);
   $('mSave').onclick=()=>run(async()=>{
-    const v=k=>$('f_'+k).value.trim(),o={id:m.id,judul:v('judul'),kategori:v('kategori'),pengarang:v('pengarang'),warna:v('warna')};
+    const v=k=>$('f_'+k).value.trim(),tipe=$('f_tipe').value,o={id:m.id,judul:v('judul'),kategori:v('kategori'),pengarang:v('pengarang'),warna:v('warna'),tipe};
     if(!o.judul||!o.kategori)throw new Error('Judul dan kategori wajib diisi');
-    const file=$('f_pdf').files[0];
-    if(file){if(file.size>10*1024*1024)throw new Error('Ukuran PDF maksimal 10 MB');o.pdfBase64=await fileToB64(file);o.pdfName=file.name}
-    else if(!m.pdfFileId)throw new Error('File PDF wajib diunggah');
+    if(tipe=='video'){o.videoUrl=v('videoUrl');if(!o.videoUrl)throw new Error('Link video YouTube wajib diisi')}
+    else{const file=$('f_pdf').files[0];
+      if(file){if(file.size>10*1024*1024)throw new Error('Ukuran PDF maksimal 10 MB');o.pdfBase64=await fileToB64(file);o.pdfName=file.name}
+      else if(!m.pdfUrl)throw new Error('File PDF wajib diunggah')}
     await adm('saveMateri',o);await loadAdmin();closeM();toast('Materi disimpan')})}
+function syncMatTipe(){const v=$('f_tipe')?.value;if(!v)return;$('secPdf').classList.toggle('hidden',v=='video');$('secVid').classList.toggle('hidden',v!='video')}
 const delMat=id=>confirm('Hapus materi ini?')&&run(async()=>{await adm('delMateri',{id});await loadAdmin();closeM();toast('Materi dihapus')});
 
 /* pengaturan */
 function renderSet(){const s=S.ad.settings;
   const cardS=(t,fs,extra='')=>`<div class="card space-y-3"><h3 class="font-bold">${t}</h3>${fs.map(([k,l,ty])=>`<div><label class="text-xs font-semibold">${l}</label><input id="s_${k}" type="${ty||'text'}" value="${esc(s[k])}" class="inp"></div>`).join('')}${extra}<button class="btn" onclick="saveSet('${fs.map(f=>f[0]).join(',')}')">Simpan</button></div>`;
-  $('t_set').innerHTML=`<div class="grid md:grid-cols-2 gap-4">
-  <div class="card space-y-3"><h3 class="font-bold">Tampilan materi</h3><p class="text-xs text-slate-500 -mt-1">Warna bawaan untuk materi baru. Tiap materi bisa diberi warna sendiri saat ditambah/diedit.</p><div><label class="text-xs font-semibold">Warna sampul bawaan</label><div class="flex items-center gap-3 mt-1"><input id="s_materiCoverColor" type="color" value="${s.materiCoverColor||'#059669'}" class="h-11 w-16 rounded-lg border cursor-pointer" oninput="$('cvPrev').style.background=this.value"><span id="cvPrev" class="px-3 py-2 rounded-lg text-white text-xs font-bold" style="background:${s.materiCoverColor||'#059669'}">Contoh sampul</span></div><p class="text-xs text-slate-500 mt-1">Berlaku untuk tampilan peserta &amp; admin.</p></div><button class="btn" onclick="saveSet('materiCoverColor')">Simpan warna bawaan</button></div>
+  $('t_set').innerHTML=`<div class="grid md:grid-cols-2 gap-4 items-start">  <div class="card space-y-3"><h3 class="font-bold">Tampilan materi</h3><p class="text-xs text-slate-500 -mt-1">Warna bawaan untuk materi baru. Tiap materi bisa diberi warna sendiri saat ditambah/diedit.</p><div><label class="text-xs font-semibold">Warna sampul bawaan</label><div class="flex items-center gap-3 mt-1"><input id="s_materiCoverColor" type="color" value="${s.materiCoverColor||'#059669'}" class="h-11 w-16 rounded-lg border cursor-pointer" oninput="$('cvPrev').style.background=this.value"><span id="cvPrev" class="px-3 py-2 rounded-lg text-white text-xs font-bold" style="background:${s.materiCoverColor||'#059669'}">Contoh sampul</span></div><p class="text-xs text-slate-500 mt-1">Berlaku untuk tampilan peserta &amp; admin.</p></div><button class="btn" onclick="saveSet('materiCoverColor')">Simpan warna bawaan</button></div>
   ${cardS('Profil instansi',[['namaKua','Nama KUA'],['alamatKua','Alamat KUA'],['kepalaKua','Nama kepala'],['nipKepala','NIP kepala'],['waAdmin','No. WhatsApp Admin (kontak peserta)','tel']])}
-  <div class="card space-y-3"><h3 class="font-bold">Jadwal Bimwin yang tersedia</h3><div class="flex gap-2"><input id="newJ" type="date" class="inp"><button class="btn" onclick="addJ()">Tambah</button></div>
+  <div class="card space-y-3"><h3 class="font-bold">Jadwal Bimwin yang tersedia</h3><div class="flex gap-2"><div class="relative flex-1"><input id="newJ" type="date" class="inp w-full pr-9"><i class="fa-solid fa-calendar-days text-slate-400 text-sm absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i></div><button class="btn" onclick="addJ()">Tambah</button></div>
     <div class="flex flex-wrap gap-2">${(s.jadwal||[]).slice().sort().map(d=>`<span class="bd bg-emerald-50 text-emerald-700 text-xs">${fd(d)} <button onclick="delJ('${d}')" class="ml-1 text-rose-500">×</button></span>`).join('')||'<span class="text-xs text-slate-400">Belum ada jadwal.</span>'}</div></div>
   ${cardS('Template undangan',[['formatUndangan','Format nomor ({COUNTER} {YEAR} {MONTH} {BULAN_ROMAWI})'],['counterUndangan','Counter berikutnya','number'],['tplUndangan','ID Google Docs / Slides template']])}
   ${cardS('Template sertifikat',[['formatSertifikat','Format nomor ({COUNTER} {YEAR} {MONTH} {BULAN_ROMAWI})'],['counterSertifikat','Counter berikutnya','number'],['tplSertifikat','ID Google Docs / Slides template'],['urlAplikasi','URL aplikasi untuk QR verifikasi']])}
